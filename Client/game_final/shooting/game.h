@@ -5,6 +5,7 @@
 #include <chrono>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Vector2.hpp>
+#include "UDPClientManager.h"
 #define SIZE 10.f
 
 class Game
@@ -33,6 +34,6 @@ class Game
 
 public:
 	void setUp();      // Initializing GUI
-	void run();        // Application loop
+	void run(UDPClientManager* client);        // Application loop
 	void updateGame(); // No implemented => Implement it in the Server side
 };

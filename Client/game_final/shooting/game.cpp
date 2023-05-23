@@ -32,7 +32,7 @@ void Game::setUp()
 	nameRectangle.setPosition(200, 130);
 }
 
-void Game::run()
+void Game::run(UDPClientManager* client)
 {
 	setUp(); // Setting Up the GUI
 	// App loop
@@ -87,7 +87,12 @@ void Game::run()
 					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0) {
 						input.erase(input.getSize() - 1, input.getSize());
 					}
-					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0) { playing = true; }
+					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0) 
+					{ 
+						
+						client->TryConnection(input);
+						playing = true; 
+					}
 					else { input += key2str(event.key.code); }
 				}
 			}

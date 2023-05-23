@@ -158,11 +158,15 @@
     <ClCompile Include="entities.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="PacketLoss.cpp" />
+    <ClCompile Include="UDPClientManager.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="entities.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="PacketLoss.h" />
+    <ClInclude Include="UDPClientManager.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
