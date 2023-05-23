@@ -1,0 +1,91 @@
+﻿'shooting.exe' (Win32): 'G:\Mi unidad\Docencia\ENTI\2022_2023\Prácticas\Práctica 8 - Práctica final\game_v1_no_final\game\x64\Debug\shooting.exe' cargado. Símbolos cargados.
+'shooting.exe' (Win32): 'C:\Windows\System32\ntdll.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\kernel32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\KernelBase.dll' cargado. 
+'shooting.exe' (Win32): 'G:\Mi unidad\Docencia\ENTI\2022_2023\Prácticas\Práctica 8 - Práctica final\game_v1_no_final\game\x64\Debug\sfml-graphics-d-2.dll' cargado. 
+'shooting.exe' (Win32): 'G:\Mi unidad\Docencia\ENTI\2022_2023\Prácticas\Práctica 8 - Práctica final\game_v1_no_final\game\x64\Debug\sfml-window-d-2.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\gdi32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\win32u.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\gdi32full.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\msvcp_win.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ucrtbase.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\user32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\advapi32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\msvcrt.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\sechost.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\rpcrt4.dll' cargado. 
+'shooting.exe' (Win32): 'G:\Mi unidad\Docencia\ENTI\2022_2023\Prácticas\Práctica 8 - Práctica final\game_v1_no_final\game\x64\Debug\sfml-system-d-2.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\msvcp140d.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\vcruntime140d.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\vcruntime140_1d.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ucrtbased.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\opengl32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\combase.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\winmm.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\glu32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\imm32.dll' cargado. 
+El subproceso 0x310 terminó con código 0 (0x0).
+'shooting.exe' (Win32): 'C:\Windows\System32\uxtheme.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\msctf.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\oleaut32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\kernel.appcore.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\windows.storage.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\wldp.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\SHCore.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\shlwapi.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\nvamui.inf_amd64_7b2ef9d543c6d7f3\nvdlistx.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\bcryptprimitives.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\clbcatq.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\AppXDeploymentClient.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\AppXDeploymentClient.dll' descargado
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\igdlh64.inf_amd64_ceba516baea4bed9\ig9icd64.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ole32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\shell32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\dwmapi.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\dxgi.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' descargado
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\nvamui.inf_amd64_7b2ef9d543c6d7f3\nvdlistx.dll' descargado
+El subproceso 0x36fc terminó con código 0 (0x0).
+'shooting.exe' (Win32): 'C:\Windows\System32\ResourcePolicyClient.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ResourcePolicyClient.dll' descargado
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\nvamui.inf_amd64_7b2ef9d543c6d7f3\nvdlistx.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\DXCore.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\cfgmgr32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' descargado
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\nvamui.inf_amd64_7b2ef9d543c6d7f3\nvdlistx.dll' descargado
+El subproceso 0x1f98 terminó con código 0 (0x0).
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\version.dll' descargado
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\igdlh64.inf_amd64_ceba516baea4bed9\igdgmm64.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\igdlh64.inf_amd64_ceba516baea4bed9\igc64.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\powrprof.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\umpdc.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\dinput8.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\InputHost.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\WinTypes.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\CoreUIComponents.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\CoreMessaging.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\propsys.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ws2_32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\ntmarta.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\hid.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\setupapi.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\bcrypt.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\devobj.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\wintrust.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\crypt32.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\msasn1.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\TextInputFramework.dll' cargado. 
+'shooting.exe' (Win32): 'C:\Windows\System32\DriverStore\FileRepository\igdlh64.inf_amd64_ceba516baea4bed9\igdgmm64.dll' descargado
+El subproceso 0x25b0 terminó con código 0 (0x0).
+El subproceso 0x33bc terminó con código 0 (0x0).
+El subproceso 0x4cb4 terminó con código 0 (0x0).
+El subproceso 0x3f4c terminó con código 0 (0x0).
+El subproceso 0x4c14 terminó con código 0 (0x0).
+El subproceso 0x4d38 terminó con código 0 (0x0).
+El subproceso 0x5024 terminó con código 0 (0x0).
+El subproceso 0x4954 terminó con código 0 (0x0).
+El subproceso 0x27f8 terminó con código 0 (0x0).
+El programa '[18608] shooting.exe' terminó con código 0 (0x0).
