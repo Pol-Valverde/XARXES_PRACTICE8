@@ -82,15 +82,39 @@ void Game::run(UDPClientManager* client)
 					}
 					break;
 				}
-				if (!playing) {
+				if (!playing && !client->isChallenge) 
+				{
 					// Manage events when no playing
+					
 					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0) {
 						input.erase(input.getSize() - 1, input.getSize());
 					}
-					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0) 
+
+					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0 ) 
 					{ 
 						
 						client->TryConnection(input);
+						//playing = true;
+						input = "";
+					}
+					else { input += key2str(event.key.code); }
+				}
+				else if(client->isChallenge)
+				{
+					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0) 
+					{
+						input.erase(input.getSize() - 1, input.getSize());
+					}
+					message = "Solve this math operation to play: " + std::to_string(client->challengeNumber1) + "+" + std::to_string(client->challengeNumber2);
+					text.setString(message);
+					window.draw(text);
+					if (event.key.code == sf::Keyboard::Return && input.getSize() > 0)
+					{
+						std::cout << input.getSize()<<"   SIZE INPUT";
+						int result = stoi(input.toAnsiString());
+						std::cout << result;
+						client->SendChallenge(result);
+
 						playing = true; 
 					}
 					else { input += key2str(event.key.code); }

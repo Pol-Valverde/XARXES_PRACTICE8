@@ -5,6 +5,11 @@
 
 UDPServerManager::Status UDPServerManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+    sf::Socket::Status status;
+    PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
+    packet << packetCount;
+    packetMap[packetCount++] = packetInfo;
+    status = _socket.send(packet, ip, port);
     return Status();
 }
 
@@ -22,14 +27,39 @@ void UDPServerManager::Receive()
             std::cout << "status is done" << std::endl;
             int type;
             packet >> type;//sempre rebem primer el type
-            packet >> user;
+            
             // Aquí gestionarem tots els diferents casos possibles de missatge (PacketType):
             switch ((PacketType)type)
             {
-            case PacketType::TRYCONNECTION:
-            {
-                std::cout << "--Username-- "<<std::endl << user.toAnsiString()<< std::endl;
-            }
+                case PacketType::TRYCONNECTION:
+                {
+                    packet >> user;
+                    std::cout << "--Username-- "<<std::endl << user.toAnsiString()<< std::endl;
+
+                    NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber1, challengeNumber1 + challengeNumber1);
+                    _newConnections[std::make_pair(remoteIp, remotePort)] = newConnection;
+
+                    sf::Packet challengePacket;
+                    challengePacket << (int)PacketType::CHALLENGE;
+                    challengePacket << challengeNumber1;
+                    challengePacket << challengeNumber1;
+                    Send(challengePacket,remoteIp,remotePort);
+                    break;
+                }
+                case PacketType::CHALLENGE:
+                {
+                    int result;
+                    packet >> result;
+                    std::cout << result<<std::endl;
+                    if (result == challengeNumber1 + challengeNumber1)
+                    {
+                        std::cout << "TRUEEEE";
+                    }
+                    else
+                        std::cout << "False";
+
+                    break;
+                }
             }
         }
     }

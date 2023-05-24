@@ -96,7 +96,8 @@ private:
     int packetCount; //id del paquet
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
-
+    int challengeNumber1 = 5;
+    int challengeNumber2 = 5;
 
 public:
     // ------ CONSTRUCTOR: ------

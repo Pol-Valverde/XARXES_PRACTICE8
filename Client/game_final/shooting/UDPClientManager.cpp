@@ -34,3 +34,44 @@ void UDPClientManager::TryConnection(sf::String user)
 	//tryConnectionPacket << _port;
 	Send(tryConnectionPacket, sf::IpAddress("127.0.0.1"), 5000);
 }
+
+void UDPClientManager::Receive()
+{
+	sf::Packet packet;
+	sf::IpAddress remoteIp;
+	unsigned short remotePort;
+	while (true)
+	{
+		sf::Socket::Status status = _socket.receive(packet, remoteIp, remotePort);
+		sf::String user;
+		if (status == sf::Socket::Done)
+		{
+			int type;
+			packet >> type;//sempre rebem primer el type
+			switch ((PacketType)type)
+			{
+				case PacketType::CHALLENGE:
+				{
+					isChallenge = true;
+					
+					packet >> challengeNumber1;
+					packet >> challengeNumber2;
+					sf::Packet challengePacket;
+					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+					break;
+				}
+			}
+		}
+	}
+}
+
+void UDPClientManager::SendChallenge(int result)
+{
+	sf::Packet tryChallenge;
+	std::cout << result;
+	tryChallenge << (int)PacketType::CHALLENGE;
+	tryChallenge << result;
+	//tryConnectionPacket << _port;
+	Send(tryChallenge, sf::IpAddress("127.0.0.1"), 5000);
+
+}

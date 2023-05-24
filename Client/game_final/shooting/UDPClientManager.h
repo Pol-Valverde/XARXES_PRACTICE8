@@ -71,16 +71,22 @@ private:
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
     int packetCount;
+    
 public:
-
-    UDPClientManager(unsigned short port, sf::IpAddress ip):_port(port),_ip(ip) {};
+    int challengeNumber1, challengeNumber2;
+    bool isChallenge = false;
+    UDPClientManager(unsigned short port, sf::IpAddress ip):_port(port),_ip(ip) 
+    { 
+        _socket.setBlocking(true); 
+    };
     Status Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     Status ReSend(sf::Packet& packet, int packetId, sf::IpAddress ip, unsigned short port);
     void Bind();
     void TryConnection(sf::String user);
-    void Receive(sf::Packet& packet);
+    void Receive();
     void Disconnect();
     void CheckTimeStampServer();
     void SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id);
+    void SendChallenge(int result);
 };
 
