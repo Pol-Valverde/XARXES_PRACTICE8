@@ -71,14 +71,17 @@ private:
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
     int packetCount;
-    
+
 public:
     int challengeNumber1, challengeNumber2;
     bool isChallenge = false;
+    bool _startPlaying;
+
     UDPClientManager(unsigned short port, sf::IpAddress ip):_port(port),_ip(ip) 
     { 
         _socket.setBlocking(true); 
     };
+
     Status Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     Status ReSend(sf::Packet& packet, int packetId, sf::IpAddress ip, unsigned short port);
     void Bind();

@@ -35,15 +35,13 @@ void UDPServerManager::Receive()
                 {
                     packet >> user;
                     std::cout << "--Username-- "<<std::endl << user.toAnsiString()<< std::endl;
+                    CreateChallenge(remoteIp, remotePort,PacketType::CHALLENGE);
 
-                    NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber1, challengeNumber1 + challengeNumber1);
+                    NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber2, challengeNumber1 + challengeNumber2);
                     _newConnections[std::make_pair(remoteIp, remotePort)] = newConnection;
 
-                    sf::Packet challengePacket;
-                    challengePacket << (int)PacketType::CHALLENGE;
-                    challengePacket << challengeNumber1;
-                    challengePacket << challengeNumber1;
-                    Send(challengePacket,remoteIp,remotePort);
+                    
+
                     break;
                 }
                 case PacketType::CHALLENGE:
@@ -51,18 +49,42 @@ void UDPServerManager::Receive()
                     int result;
                     packet >> result;
                     std::cout << result<<std::endl;
-                    if (result == challengeNumber1 + challengeNumber1)
+
+                    sf::Packet challengeStatusPacket;
+
+                    if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                     {
                         std::cout << "TRUEEEE";
+
+                        challengeStatusPacket << (int)PacketType::CANCONNECT;
+                        Send(challengeStatusPacket, remoteIp, remotePort);
+                        
+                        //_clients.insert(std::make_pair(remoteIp, remotePort), );
+
+                        _newConnections.erase(std::make_pair(remoteIp, remotePort));
                     }
                     else
+                    {
                         std::cout << "False";
+                        CreateChallenge(remoteIp, remotePort, PacketType::CANNOTCONNECT);
+                    }
 
                     break;
                 }
             }
         }
     }
+}
+
+void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort,PacketType pt)
+{
+    sf::Packet challengePacket;
+    challengePacket << (int)pt;
+    challengeNumber1 = rand() % 51;
+    challengeNumber2 = rand() % 51;
+    challengePacket << challengeNumber1;
+    challengePacket << challengeNumber2;
+    Send(challengePacket, remoteIp, remotePort);
 }
 
 UDPServerManager::Status UDPServerManager::Listen()

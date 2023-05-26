@@ -82,7 +82,7 @@ void Game::run(UDPClientManager* client)
 					}
 					break;
 				}
-				if (!playing && !client->isChallenge) 
+				if (!client->_startPlaying && !client->isChallenge) // Input name
 				{
 					// Manage events when no playing
 					
@@ -92,15 +92,15 @@ void Game::run(UDPClientManager* client)
 
 					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0 ) 
 					{ 
-						
 						client->TryConnection(input);
 						//playing = true;
 						input = "";
 					}
 					else { input += key2str(event.key.code); }
 				}
-				else if(client->isChallenge)
+				else if(client->isChallenge) // Solve challenge
 				{
+					
 					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0) 
 					{
 						input.erase(input.getSize() - 1, input.getSize());
@@ -114,10 +114,13 @@ void Game::run(UDPClientManager* client)
 						int result = stoi(input.toAnsiString());
 						std::cout << result;
 						client->SendChallenge(result);
-
-						playing = true; 
+						input = "";
 					}
 					else { input += key2str(event.key.code); }
+				}
+				else if (client->_startPlaying)
+				{
+					playing = true;
 				}
 			}
 		}

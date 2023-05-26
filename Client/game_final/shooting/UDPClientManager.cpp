@@ -60,6 +60,26 @@ void UDPClientManager::Receive()
 					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
 					break;
 				}
+
+				case PacketType::CANCONNECT:
+				{
+					isChallenge = false;
+					_startPlaying = true;
+					std::cout << "CAN Connect" << std::endl;
+					break;
+				}
+				case PacketType::CANNOTCONNECT:
+				{
+					isChallenge = true;
+
+
+					packet >> challengeNumber1;
+					packet >> challengeNumber2;
+					sf::Packet challengePacket;
+					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+					break;
+				}
+				
 			}
 		}
 	}

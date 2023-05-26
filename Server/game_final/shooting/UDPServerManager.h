@@ -96,8 +96,8 @@ private:
     int packetCount; //id del paquet
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
-    int challengeNumber1 = 5;
-    int challengeNumber2 = 5;
+    int challengeNumber1;
+    int challengeNumber2;
 
 public:
     // ------ CONSTRUCTOR: ------
@@ -111,6 +111,7 @@ public:
     Status Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     Status ReSend(sf::Packet& packet, int packetId, sf::IpAddress ip, unsigned short port);
     void Receive();
+    void CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort,PacketType pt);
     //Status Connect();
     Status Listen();
     void Disconnect();
