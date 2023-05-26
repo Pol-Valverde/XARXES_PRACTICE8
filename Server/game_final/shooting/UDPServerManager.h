@@ -3,6 +3,7 @@
 #include <SFML\Network.hpp>
 #include <iostream>
 #include <chrono>
+#include <vector>
 
 #include "PacketLoss.h"
 
@@ -23,8 +24,8 @@ public:
 
         Client() = default;
 
-        Client(std::string _username, sf::IpAddress _ip, unsigned short _port, int _id)
-            : username(_username), ip(_ip), port(_port), id(_id) {}
+        Client(std::string _username, sf::IpAddress _ip, unsigned short _port)
+            : username(_username), ip(_ip), port(_port) {}
     };
 
 
@@ -42,6 +43,16 @@ public:
 
         NewConnection(sf::IpAddress _ip, unsigned short _port, std::string _username, int _challenge1, int _challenge2, int _solution)
             : ip(_ip), port(_port), username(_username), challenge1(_challenge1), challenge2(_challenge2), solution(_solution) {}
+    };
+
+    struct Match
+    {
+        int matchId;
+        int clientID1;
+        int clientID2;
+
+        Match(int id, int c1, int c2) : matchId(id), clientID1(c1), clientID2(c2) {}
+
     };
 
     struct PacketInfo // Serveix tant per paquets enviats com pels paquets de tipus ACK.
@@ -62,8 +73,10 @@ public:
             : id(_id), packet(_packet), timeSent(_timeSent), remoteIp(_remoteIp), remotePort(_remotePort) {}
     };
 
-    std::map<std::pair<sf::IpAddress, unsigned short>, Client> _clients;
-
+    std::map<int, Client> _clients;
+    std::map<int, Match> _matches;
+    int currentMatchID = 0;
+    std::vector<int> clientsCreatingMatch;
     enum class Status
     {
         Done,               // The socket has sent / received the data correctly
@@ -81,6 +94,7 @@ private:
         CHALLENGE,          // Packet to send challenge question and challenge answer
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
+        MATCHMAKINGMODE,
         MESSAGE,            // Packet to send a message to the global chat
         ACK,
         DISCONNECT          // Packet to disconnect
@@ -98,7 +112,7 @@ private:
     std::vector<int> packetsToDelete;
     int challengeNumber1;
     int challengeNumber2;
-
+    int clientCurrentId = 0;
 public:
     // ------ CONSTRUCTOR: ------
     UDPServerManager(unsigned short port, sf::IpAddress ip) 

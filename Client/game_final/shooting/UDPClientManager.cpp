@@ -22,7 +22,6 @@ void UDPClientManager::Bind()
 		_port++;
 		status = _socket.bind(_port);
 	}
-
 }
 
 void UDPClientManager::TryConnection(sf::String user)
@@ -63,16 +62,18 @@ void UDPClientManager::Receive()
 
 				case PacketType::CANCONNECT:
 				{
+					packet >> id;
 					isChallenge = false;
-					_startPlaying = true;
-					std::cout << "CAN Connect" << std::endl;
+					std::cout << "CAN Connect id:" << id<< std::endl;
+					selectMatchMakingOption = true;
+
 					break;
 				}
 				case PacketType::CANNOTCONNECT:
 				{
 					isChallenge = true;
 
-
+					
 					packet >> challengeNumber1;
 					packet >> challengeNumber2;
 					sf::Packet challengePacket;
@@ -94,4 +95,16 @@ void UDPClientManager::SendChallenge(int result)
 	//tryConnectionPacket << _port;
 	Send(tryChallenge, sf::IpAddress("127.0.0.1"), 5000);
 
+}
+
+void UDPClientManager::SendSelectMatchMakingType(int result)
+{
+
+	selectMatchMakingOption = false;
+	_startPlaying = true;
+	
+	sf::Packet matchMakingPacket;
+	matchMakingPacket << (int)PacketType::MATCHMAKINGMODE;
+	matchMakingPacket << result;
+	Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
 }

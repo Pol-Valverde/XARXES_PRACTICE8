@@ -58,6 +58,7 @@ private:
         CHALLENGE,          // Packet to send challenge question and challenge answer
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
+        MATCHMAKINGMODE,
         MESSAGE,            // Packet to send a message to the global chat
         ACK,
         DISCONNECT          // Packet to disconnect
@@ -71,10 +72,12 @@ private:
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
     int packetCount;
-
+    int id;
 public:
     int challengeNumber1, challengeNumber2;
     bool isChallenge = false;
+    bool selectMatchMakingOption = false;
+    bool matchMaking = false;
     bool _startPlaying;
 
     UDPClientManager(unsigned short port, sf::IpAddress ip):_port(port),_ip(ip) 
@@ -91,5 +94,6 @@ public:
     void CheckTimeStampServer();
     void SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id);
     void SendChallenge(int result);
+    void SendSelectMatchMakingType(int result);
 };
 

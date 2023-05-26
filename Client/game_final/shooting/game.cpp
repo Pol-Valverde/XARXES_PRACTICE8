@@ -82,7 +82,7 @@ void Game::run(UDPClientManager* client)
 					}
 					break;
 				}
-				if (!client->_startPlaying && !client->isChallenge) // Input name
+				if (!client->_startPlaying && !client->isChallenge && !client->selectMatchMakingOption) // Input name
 				{
 					// Manage events when no playing
 					
@@ -114,6 +114,23 @@ void Game::run(UDPClientManager* client)
 						int result = stoi(input.toAnsiString());
 						std::cout << result;
 						client->SendChallenge(result);
+						input = "";
+					}
+					else { input += key2str(event.key.code); }
+				}
+				else if (client->selectMatchMakingOption)
+				{
+					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0)
+					{
+						input.erase(input.getSize() - 1, input.getSize());
+					}
+					message =  "1 --> find match   2--> create match ";
+					text.setString(message);
+					window.draw(text);
+					if (event.key.code == sf::Keyboard::Return && input.getSize() > 0)
+					{
+						int result = stoi(input.toAnsiString());
+						client->SendSelectMatchMakingType(result);
 						input = "";
 					}
 					else { input += key2str(event.key.code); }

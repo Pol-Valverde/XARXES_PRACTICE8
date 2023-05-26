@@ -56,12 +56,14 @@ void UDPServerManager::Receive()
                     {
                         std::cout << "TRUEEEE";
 
-                        challengeStatusPacket << (int)PacketType::CANCONNECT;
-                        Send(challengeStatusPacket, remoteIp, remotePort);
-                        
-                        //_clients.insert(std::make_pair(remoteIp, remotePort), );
-
+                        clientCurrentId++;
+                        NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
+                        Client tempClient = Client(tempConnection.username, tempConnection.ip, tempConnection.port);
+                        _clients[clientCurrentId] = tempClient;
                         _newConnections.erase(std::make_pair(remoteIp, remotePort));
+                        challengeStatusPacket << (int)PacketType::CANCONNECT;
+                        challengeStatusPacket << clientCurrentId;
+                        Send(challengeStatusPacket, remoteIp, remotePort);
                     }
                     else
                     {
@@ -70,6 +72,30 @@ void UDPServerManager::Receive()
                     }
 
                     break;
+                }
+                case PacketType::MATCHMAKINGMODE:
+                {
+                    int result;
+                    packet >> result;
+                    std::cout << "\n\n Result OF MATCHMAKINGTYPE --->"<<result<<std::endl;
+
+                    if (result == 1)
+                    {
+                        clientsCreatingMatch.push_back(clientCurrentId);
+                    }
+                    else if (result == 2 )
+                    {
+                        if (clientsCreatingMatch.size() <= 0) {
+                            clientsCreatingMatch.push_back(clientCurrentId);
+                        }
+                        else {
+                            _matches[currentMatchID] = Match(currentMatchID, clientsCreatingMatch[0], currentMatchID);
+                            clientsCreatingMatch.erase(clientsCreatingMatch.begin());
+                            //TODO: connect both players
+                        }
+                        
+                    }
+
                 }
             }
         }
