@@ -88,13 +88,14 @@ public:
     };
 
     Status Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
+    Status SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     Status ReSend(sf::Packet& packet, int packetId, sf::IpAddress ip, unsigned short port);
     void Bind();
     void TryConnection(sf::String user);
     void Receive();
     void Disconnect();
-    void CheckTimeStampServer();
-    void SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id);
+    void CheckTimeStamp();
+    void SendACKToServer(sf::IpAddress remoteIP, unsigned short remotePort, int id);
     void SendChallenge(int result);
     void SendSelectMatchMakingType(int result);
 };

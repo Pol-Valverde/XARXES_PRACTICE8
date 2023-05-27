@@ -8,9 +8,64 @@ UDPServerManager::Status UDPServerManager::Send(sf::Packet& packet, sf::IpAddres
     sf::Socket::Status status;
     PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
     packet << packetCount;
-    packetMap[packetCount++] = packetInfo;
+    packetMap[packetCount++] = packetInfo; // packets to ReSend
+
     status = _socket.send(packet, ip, port);
+
     return Status();
+}
+
+UDPServerManager::Status UDPServerManager::ReSend(sf::Packet& packet, int packetId, sf::IpAddress ip, unsigned short port)
+{
+    std::cout << "RESEND" << std::endl;
+
+    // Fill packet with data:
+    sf::Socket::Status status;
+    PacketInfo packetInfo = PacketInfo{ packetId, packet, std::chrono::system_clock::now(), ip, port };
+
+    packetMap[packetId] = packetInfo;
+
+    status = _socket.send(packet, ip, port);
+
+    packet.clear();
+
+    Status tempStatus;
+
+    switch (status)
+    {
+    case sf::Socket::Done:
+        tempStatus = Status::Done;
+        break;
+
+    case sf::Socket::NotReady:
+        std::cout << "Error: NotReady.";
+        tempStatus = Status::Error; // Since we do not know how sf:Socket::Status works, we return Error directly.
+        break;
+
+    case sf::Socket::Partial:
+        std::cout << "Error: Partial.";
+        tempStatus = Status::Error; // Since we do not know how sf:Socket::Status works, we return Error directly.
+        break;
+
+    case sf::Socket::Disconnected: // Per com hem fet el codi, retornar Status::Disconnected fa que el servidor es tanqui.
+                                   // per això ho canviem per Status::Error.
+        std::cout << "Error: cliente desconectado.";
+        tempStatus = Status::Error;
+        break;
+
+    case sf::Socket::Error:
+        std::cout << "Error: al enviar paquete.";
+        tempStatus = Status::Error;
+        break;
+
+    default:
+        std::cout << "Error: default";
+        tempStatus = Status::Error; // Since we do not know how sf:Socket::Status works, we return Error directly.
+        break;
+    }
+
+    // Return:
+    return tempStatus;
 }
 
 void UDPServerManager::Receive()
@@ -34,22 +89,23 @@ void UDPServerManager::Receive()
                 {
                     packet >> user;
                     std::cout << "--Username-- "<<std::endl << user.toAnsiString()<< std::endl;
-                    CreateChallenge(remoteIp, remotePort,PacketType::CHALLENGE);
+                    CreateChallenge(remoteIp, remotePort, PacketType::CHALLENGE);
 
                     NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber2, challengeNumber1 + challengeNumber2);
                     _newConnections[std::make_pair(remoteIp, remotePort)] = newConnection;
-
-                    
 
                     break;
                 }
                 case PacketType::CHALLENGE:
                 {
-                    int result;
+                    int result, id;
                     packet >> result;
+                    packet >> id;
+                    std::cout << "Challenge packet id: " << id;
                     std::cout << result<<std::endl;
 
                     sf::Packet challengeStatusPacket;
+                    SendACKToClient(remoteIp, remotePort, id);
 
                     if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                     {
@@ -102,10 +158,20 @@ void UDPServerManager::Receive()
                     int tempId;
                     packet >> tempId;
                     std::cout << "recieved pong" << std::endl;
-                    _clients[tempId].firstPingSended = false;
                     _clients[tempId].lastPingSendedTs = std::chrono::system_clock::now();
                     _clients[tempId].lastMessageRecievedTs = std::chrono::system_clock::now();
                     _clients[tempId].pingCounter = 0;
+                    _clients[tempId].firstPingSended = false;
+
+                    break;
+                }
+                case PacketType::ACK:
+                {
+                    int tempID;
+                    packet >> tempID;
+
+                    std::cout << "recieved ack client" << std::endl;
+                    packetsToDelete.push_back(tempID);
 
                     break;
                 }
@@ -114,7 +180,7 @@ void UDPServerManager::Receive()
     }
 }
 
-void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort,PacketType pt)
+void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort, PacketType pt)
 {
     sf::Packet challengePacket;
     challengePacket << (int)pt;
@@ -122,6 +188,7 @@ void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned s
     challengeNumber2 = rand() % 51;
     challengePacket << challengeNumber1;
     challengePacket << challengeNumber2;
+
     Send(challengePacket, remoteIp, remotePort);
 }
 
@@ -131,6 +198,17 @@ UDPServerManager::Status UDPServerManager::Listen()
     return Status();
 }
 
+void UDPServerManager::SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id)
+{
+    sf::Packet ACKpacket;
+    sf::Socket::Status status;
+
+    ACKpacket << (int)PacketType::ACK;
+    ACKpacket << id;
+
+    status = _socket.send(ACKpacket, remoteIP, remotePort);
+}
+
 void UDPServerManager::CheckPing()
 {
     while (true) 
@@ -138,11 +216,13 @@ void UDPServerManager::CheckPing()
         if (_clients.size() > 0) {
 
             auto current_time = std::chrono::system_clock::now();
+
             for (auto client : _clients)
             {
                 if (!(client.second.firstPingSended))
                 {
-                   
+                    
+
                     if ((current_time - client.second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
                     {
                         //sendFirstPing
@@ -151,10 +231,7 @@ void UDPServerManager::CheckPing()
                         sf::Packet pingPacket;
                         std::cout << "FIRST PING" << std::endl;
                         pingPacket << (int)PacketType::PING;
-                        Send(pingPacket, client.second.ip, client.second.port);
-
-                        std::cout << _clients.size();
-                        
+                        Send(pingPacket, client.second.ip, client.second.port);                        
                     }
                 }
                 else {
@@ -180,7 +257,43 @@ void UDPServerManager::CheckPing()
             }
         }
     }
+}
 
+void UDPServerManager::CheckTimeStamp()
+{
+    while (true)
+    {
+        if (packetMap.size() > 0) {
+            //sstd::cout << "checking time client" << std::endl;
+
+            auto current_time = std::chrono::system_clock::now();
+
+            for (auto packet : packetMap)
+            {
+                //check if we need to resend the packet
+                if ((current_time - packet.second.timeSent) > std::chrono::milliseconds(PACKET_TIMEOUT_IN_MILLIS))
+                {
+                    std::cout << "resending message" << std::endl;
+
+                    ReSend(packet.second.packet, packet.first, packet.second.remoteIp, packet.second.remotePort); // ADDED THIS!
+                    packet.second.timeSent = std::chrono::system_clock::now();
+                }
+            }
+        }
+
+        //delete confirmed packet
+        if (packetsToDelete.size() > 0)
+        {
+            for (int id : packetsToDelete)
+            {
+                packetMap.erase(id);
+            }
+
+            packetsToDelete.clear();
+
+            std::cout << "PacketMap size: " << packetsToDelete.size() << std::endl;
+        }
+    }
 }
 
 void UDPServerManager::GetLineFromCin()
@@ -205,26 +318,5 @@ void UDPServerManager::GetLineFromCin()
 
 
 
-//UDPServerManager::Status UDPServerManager::Connect()
-//{
-//    sf::Packet packet;
-//    packet << (int)PacketType::TRYCONNECTION;//primer posem el type
-//    packet << packetCount++;//despres la id
-//    UDPServerManager::Status status;
-//
-//    int probValue = probLossManager.generate_prob();
-//    //calculate probability
-//    //if (probValue > PKT_LOSS_PROB)
-//        status = Send(packet, _ip, _port, new std::string());
-//    //else {
-//       // std::cout << "error when sending packet" << std::endl;
-//   // }
-//
-//    if (status != UDPServerManager::Status::Done)
-//    {
-//        std::cout << "\t> A packet has been lost.";
-//        return Status::Error;
-//    }
-//
-//    return status;
-//}
+
+

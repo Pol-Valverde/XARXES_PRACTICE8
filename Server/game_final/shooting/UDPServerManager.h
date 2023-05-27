@@ -135,11 +135,9 @@ public:
     //Status Connect();
     Status Listen();
     void Disconnect();
-    void CheckTimeStampServer();
     void SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id);
     void CheckPing();
-
+    void CheckTimeStamp();
     void GetLineFromCin();
-
 };
 

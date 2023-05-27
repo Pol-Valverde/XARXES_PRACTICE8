@@ -4,9 +4,14 @@
 int main()
 {
     UDPClientManager* client = new UDPClientManager(5001, sf::IpAddress("127.0.0.1"));
-    client->Bind(); 
+    client->Bind();
+
     std::thread rcv(&UDPClientManager::Receive, client);
     rcv.detach();
+
+    std::thread checkTimeStamp(&UDPClientManager::CheckTimeStamp, client);
+    checkTimeStamp.detach();
+
     Game g;
     g.run(client); 
 }

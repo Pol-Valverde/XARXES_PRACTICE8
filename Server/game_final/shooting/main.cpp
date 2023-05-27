@@ -15,6 +15,9 @@ int main()
 
     std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
     checkPing.detach();
+
+    std::thread checkTimeStamp(&UDPServerManager::CheckTimeStamp, serverManager);
+    checkTimeStamp.detach();
     
     while (true) {
 
