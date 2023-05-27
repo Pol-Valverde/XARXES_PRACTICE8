@@ -20,7 +20,11 @@ public:
         unsigned short port; // NEW: added this
         std::string username;
         unsigned int id; // NEW: added this
-        int ts; // NEW: added this
+        std::chrono::system_clock::time_point ts; // NEW: added this
+        std::chrono::system_clock::time_point lastMessageRecievedTs;
+        std::chrono::system_clock::time_point lastPingSendedTs;
+        bool firstPingSended = false;
+        int pingCounter = 0;
 
         Client() = default;
 
@@ -50,7 +54,7 @@ public:
         int matchId;
         int clientID1;
         int clientID2;
-
+        Match() = default;
         Match(int id, int c1, int c2) : matchId(id), clientID1(c1), clientID2(c2) {}
 
     };
@@ -95,6 +99,8 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        PING,
+        PONG,
         MESSAGE,            // Packet to send a message to the global chat
         ACK,
         DISCONNECT          // Packet to disconnect
@@ -131,8 +137,9 @@ public:
     void Disconnect();
     void CheckTimeStampServer();
     void SendACKToClient(sf::IpAddress remoteIP, unsigned short remotePort, int id);
+    void CheckPing();
 
-
+    void GetLineFromCin();
 
 };
 

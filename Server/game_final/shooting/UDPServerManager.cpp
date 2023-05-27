@@ -24,7 +24,6 @@ void UDPServerManager::Receive()
         sf::String user;
         if (status == sf::Socket::Done)
         {
-            std::cout << "status is done" << std::endl;
             int type;
             packet >> type;//sempre rebem primer el type
             
@@ -54,12 +53,14 @@ void UDPServerManager::Receive()
 
                     if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                     {
-                        std::cout << "TRUEEEE";
 
                         clientCurrentId++;
                         NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
                         Client tempClient = Client(tempConnection.username, tempConnection.ip, tempConnection.port);
+                        tempClient.lastMessageRecievedTs = std::chrono::system_clock::now();
+                        tempClient.lastPingSendedTs = std::chrono::system_clock::now();
                         _clients[clientCurrentId] = tempClient;
+
                         _newConnections.erase(std::make_pair(remoteIp, remotePort));
                         challengeStatusPacket << (int)PacketType::CANCONNECT;
                         challengeStatusPacket << clientCurrentId;
@@ -67,8 +68,8 @@ void UDPServerManager::Receive()
                     }
                     else
                     {
-                        std::cout << "False";
                         CreateChallenge(remoteIp, remotePort, PacketType::CANNOTCONNECT);
+                        
                     }
 
                     break;
@@ -77,7 +78,6 @@ void UDPServerManager::Receive()
                 {
                     int result;
                     packet >> result;
-                    std::cout << "\n\n Result OF MATCHMAKINGTYPE --->"<<result<<std::endl;
 
                     if (result == 1)
                     {
@@ -95,7 +95,19 @@ void UDPServerManager::Receive()
                         }
                         
                     }
+                    break;
+                }
+                case PacketType::PONG:
+                {
+                    int tempId;
+                    packet >> tempId;
+                    std::cout << "recieved pong" << std::endl;
+                    _clients[tempId].firstPingSended = false;
+                    _clients[tempId].lastPingSendedTs = std::chrono::system_clock::now();
+                    _clients[tempId].lastMessageRecievedTs = std::chrono::system_clock::now();
+                    _clients[tempId].pingCounter = 0;
 
+                    break;
                 }
             }
         }
@@ -117,6 +129,77 @@ UDPServerManager::Status UDPServerManager::Listen()
 {
     _socket.bind(5000);
     return Status();
+}
+
+void UDPServerManager::CheckPing()
+{
+    while (true) 
+    {
+        if (_clients.size() > 0) {
+
+            auto current_time = std::chrono::system_clock::now();
+            for (auto client : _clients)
+            {
+                if (!(client.second.firstPingSended))
+                {
+                   
+                    if ((current_time - client.second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
+                    {
+                        //sendFirstPing
+                        client.second.firstPingSended = true;
+                        client.second.lastPingSendedTs = std::chrono::system_clock::now();
+                        sf::Packet pingPacket;
+                        std::cout << "FIRST PING" << std::endl;
+                        pingPacket << (int)PacketType::PING;
+                        Send(pingPacket, client.second.ip, client.second.port);
+
+                        std::cout << _clients.size();
+                        
+                    }
+                }
+                else {
+                    if ( ((current_time - client.second.lastPingSendedTs) >= std::chrono::milliseconds(2000))  && (client.second.pingCounter<5) )
+                    {
+                        client.second.pingCounter++;
+                        sf::Packet pingPacket;
+                        
+                        std::cout << " PING" << std::endl;
+                        pingPacket << (int)PacketType::PING;
+                        Send(pingPacket, client.second.ip, client.second.port);
+                        client.second.lastPingSendedTs = std::chrono::system_clock::now();
+                        //sendFirstPing
+                    }
+                    else if (client.second.pingCounter > 5) {
+                        sf::Packet disconnectionPacket;
+                        std::cout << " Disconnected by PING" << std::endl;
+                        disconnectionPacket << (int)PacketType::DISCONNECT;
+                        Send(disconnectionPacket, client.second.ip, client.second.port);
+                        _clients.erase(client.second.id);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+void UDPServerManager::GetLineFromCin()
+{
+    std::string line;
+
+    while (true)
+    {
+        sf::Packet disconnectionPacket;
+        std::getline(std::cin, line);
+        if ( line == "exit") {
+            disconnectionPacket << (int)PacketType::DISCONNECT;
+            for (std::pair<int, Client> client : _clients) {
+                Send(disconnectionPacket, client.second.ip, client.second.port);
+            }
+            _clients.clear();
+            exit(0);
+        }
+    }
 }
 
 

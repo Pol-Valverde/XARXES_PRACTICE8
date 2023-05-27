@@ -80,10 +80,29 @@ void UDPClientManager::Receive()
 					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
 					break;
 				}
+				case PacketType::DISCONNECT:
+				{
+					Disconnect();
+					break;
+				}
+				case PacketType::PING:
+				{
+					sf::Packet pongPacket;
+					pongPacket << (int)PacketType::PONG;
+					pongPacket << id;
+					Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
+				}
 				
 			}
 		}
 	}
+}
+
+void UDPClientManager::Disconnect()
+{
+	_socket.unbind();
+	exit(0);
+	std::cout << "disconecting" << std::endl;
 }
 
 void UDPClientManager::SendChallenge(int result)

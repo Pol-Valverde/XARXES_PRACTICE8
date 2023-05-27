@@ -59,6 +59,8 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        PING,
+        PONG,
         MESSAGE,            // Packet to send a message to the global chat
         ACK,
         DISCONNECT          // Packet to disconnect
