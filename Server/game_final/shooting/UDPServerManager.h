@@ -81,6 +81,7 @@ public:
     std::map<int, Match> _matches;
     int currentMatchID = 0;
     std::vector<int> clientsCreatingMatch;
+    int packetLossProb = 5;
     enum class Status
     {
         Done,               // The socket has sent / received the data correctly
@@ -139,5 +140,6 @@ public:
     void CheckPing();
     void CheckTimeStamp();
     void GetLineFromCin();
+    void SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
 };
 

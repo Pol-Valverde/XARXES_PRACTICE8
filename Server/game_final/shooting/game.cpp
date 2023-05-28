@@ -32,7 +32,7 @@ void Game::setUp()
 	nameRectangle.setPosition(200, 130);
 }
 
-void Game::run()
+void Game::run(UDPServerManager* server)
 {
 	setUp(); // Setting Up the GUI
 	// App loop
@@ -84,10 +84,18 @@ void Game::run()
 				}
 				if (!playing) {
 					// Manage events when no playing
-					if ((event.key.code == sf::Keyboard::Delete || event.key.code == sf::Keyboard::BackSpace) && input.getSize() > 0) {
-						input.erase(input.getSize() - 1, input.getSize());
+					if ((event.key.code == sf::Keyboard::P)) {
+						server->packetLossProb+=10;
 					}
-					else if (event.key.code == sf::Keyboard::Return && input.getSize() > 0) { playing = true; }
+					else if((event.key.code == sf::Keyboard::L)) {
+						server->packetLossProb -= 10;
+						
+					}
+					message ="packet loss probability " + std::to_string(server->packetLossProb);
+					text.setString(message);
+					window.draw(text);
+
+					if (event.key.code == sf::Keyboard::Return && input.getSize() > 0) { }
 					else { input += key2str(event.key.code); }
 				}
 			}
@@ -99,8 +107,6 @@ void Game::run()
 		// GIU draw when no playing
 		if (!playing) {
 			// When no playing
-			window.draw(nameRectangle);
-			nameText.setString(input);
 			window.draw(nameText);
 			window.draw(text);
 		}

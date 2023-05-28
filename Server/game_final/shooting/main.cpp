@@ -1,4 +1,4 @@
-//#include "game.h"
+#include "game.h"
 #include "UDPServerManager.h"
 #include <thread>
 
@@ -13,15 +13,16 @@ int main()
     std::thread getLine(&UDPServerManager::GetLineFromCin, serverManager);
     getLine.detach();
 
-    std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
-    checkPing.detach();
+    //std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
+    //checkPing.detach();
 
     std::thread checkTimeStamp(&UDPServerManager::CheckTimeStamp, serverManager);
     checkTimeStamp.detach();
     
+    Game g;
+    g.run(serverManager);
     while (true) {
 
     }
-   // Game g;
-   // g.run(); 
+     
 }

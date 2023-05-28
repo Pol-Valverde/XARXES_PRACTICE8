@@ -1,7 +1,7 @@
 #include "UDPClientManager.h"
 
 #define PKT_LOSS_PROB 5// 5 sobre 1000 -> 0.5%
-#define PACKET_TIMEOUT_IN_MILLIS 1000 // milliseconds
+#define PACKET_TIMEOUT_IN_MILLIS 500 // milliseconds
 
 UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
@@ -9,7 +9,11 @@ UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddres
 	PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
 	packet << packetCount;
 	packetMap[packetCount++] = packetInfo;
-	status = _socket.send(packet, ip, port);
+	int probabilty = probLossManager.generate_prob();
+	if (probabilty > PKT_LOSS_PROB)
+	{
+		status = _socket.send(packet, ip, port);
+	}
 	return Status();
 }
 
@@ -31,9 +35,11 @@ UDPClientManager::Status UDPClientManager::ReSend(sf::Packet& packet, int packet
 	PacketInfo packetInfo = PacketInfo{ packetId, packet, std::chrono::system_clock::now(), ip, port };
 
 	packetMap[packetId] = packetInfo;
-
-	status = _socket.send(packet, ip, port);
-
+	int probabilty = probLossManager.generate_prob();
+	if (probabilty > PKT_LOSS_PROB)
+	{
+		status = _socket.send(packet, ip, port);
+	}
 	packet.clear();
 
 	Status tempStatus;
@@ -135,7 +141,9 @@ void UDPClientManager::Receive()
 					isChallenge = false;
 					std::cout << "CAN Connect id:" << id<< std::endl;
 					selectMatchMakingOption = true;
-
+					int id;
+					packet >> id;
+					SendACKToServer(remoteIp, remotePort, id);
 					break;
 				}
 				case PacketType::CANNOTCONNECT:
@@ -147,6 +155,9 @@ void UDPClientManager::Receive()
 					packet >> challengeNumber2;
 					sf::Packet challengePacket;
 					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+					int id;
+					packet >> id;
+					SendACKToServer(remoteIp, remotePort, id);
 					break;
 				}
 				case PacketType::DISCONNECT:
@@ -159,7 +170,7 @@ void UDPClientManager::Receive()
 					sf::Packet pongPacket;
 					pongPacket << (int)PacketType::PONG;
 					pongPacket << id;
-					Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
+					//Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
 				}
 				case PacketType::ACK:
 				{
@@ -223,8 +234,11 @@ void UDPClientManager::SendACKToServer(sf::IpAddress remoteIP, unsigned short re
 
 	ACKpacket << (int)PacketType::ACK;
 	ACKpacket << id;
-
-	status = _socket.send(ACKpacket, remoteIP, remotePort);
+	int probabilty = probLossManager.generate_prob();
+	if (probabilty > PKT_LOSS_PROB)
+	{
+		status = _socket.send(ACKpacket, remoteIP, remotePort);
+	}
 }
 
 void UDPClientManager::SendChallenge(int result)
@@ -247,5 +261,7 @@ void UDPClientManager::SendSelectMatchMakingType(int result)
 	sf::Packet matchMakingPacket;
 	matchMakingPacket << (int)PacketType::MATCHMAKINGMODE;
 	matchMakingPacket << result;
-	Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
+	
+		Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
+	
 }

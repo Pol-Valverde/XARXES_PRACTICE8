@@ -1,17 +1,21 @@
 #include "UDPServerManager.h"
 
-#define PKT_LOSS_PROB 5// 5 sobre 1000 -> 0.5%
-#define PACKET_TIMEOUT_IN_MILLIS 1000 // milliseconds
+
+#define PACKET_TIMEOUT_IN_MILLIS 500 // milliseconds
 
 UDPServerManager::Status UDPServerManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+    int probabilty = probLossManager.generate_prob();
+    std::cout << "probability: " << probabilty << std::endl;
+
     sf::Socket::Status status;
     PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
     packet << packetCount;
     packetMap[packetCount++] = packetInfo; // packets to ReSend
-
-    status = _socket.send(packet, ip, port);
-
+    if (probabilty > packetLossProb)
+    {
+        status = _socket.send(packet, ip, port);
+    }
     return Status();
 }
 
@@ -22,11 +26,16 @@ UDPServerManager::Status UDPServerManager::ReSend(sf::Packet& packet, int packet
     // Fill packet with data:
     sf::Socket::Status status;
     PacketInfo packetInfo = PacketInfo{ packetId, packet, std::chrono::system_clock::now(), ip, port };
-
+    if (packetMap.find(packetId) != packetMap.end())
     packetMap[packetId] = packetInfo;
 
-    status = _socket.send(packet, ip, port);
-
+    int probabilty = probLossManager.generate_prob();
+    if (probabilty > packetLossProb)
+    {
+        status = _socket.send(packet, ip, port);
+    }
+    else
+        status = sf::Socket::Status::Error;
     packet.clear();
 
     Status tempStatus;
@@ -121,6 +130,7 @@ void UDPServerManager::Receive()
                         challengeStatusPacket << (int)PacketType::CANCONNECT;
                         challengeStatusPacket << clientCurrentId;
                         Send(challengeStatusPacket, remoteIp, remotePort);
+                        
                     }
                     else
                     {
@@ -134,7 +144,10 @@ void UDPServerManager::Receive()
                 {
                     int result;
                     packet >> result;
+                    int id;
+                    packet >> id;
 
+                    SendACKToClient(remoteIp, remotePort, id);
                     if (result == 1)
                     {
                         clientsCreatingMatch.push_back(clientCurrentId);
@@ -205,8 +218,11 @@ void UDPServerManager::SendACKToClient(sf::IpAddress remoteIP, unsigned short re
 
     ACKpacket << (int)PacketType::ACK;
     ACKpacket << id;
-
-    status = _socket.send(ACKpacket, remoteIP, remotePort);
+    int probabilty = probLossManager.generate_prob();
+    if (probabilty > packetLossProb)
+    {
+        status = _socket.send(ACKpacket, remoteIP, remotePort);
+    }
 }
 
 void UDPServerManager::CheckPing()
@@ -313,6 +329,18 @@ void UDPServerManager::GetLineFromCin()
             exit(0);
         }
     }
+}
+
+void UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
+{
+    sf::Socket::Status status;
+    int probabilty = probLossManager.generate_prob();
+    if (probabilty > packetLossProb)
+    {
+        status = _socket.send(packet, ip, port);
+    }
+  
+
 }
 
 
