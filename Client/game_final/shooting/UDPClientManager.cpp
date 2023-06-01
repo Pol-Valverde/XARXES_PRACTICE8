@@ -3,11 +3,18 @@
 #define PKT_LOSS_PROB 5// 5 sobre 1000 -> 0.5%
 #define PACKET_TIMEOUT_IN_MILLIS 500 // milliseconds
 
+UDPClientManager::UDPClientManager(unsigned short port, sf::IpAddress ip) :_port(port), _ip(ip)
+{
+	_socket.setBlocking(true);
+}
+
+
 UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
 	sf::Socket::Status status;
 	PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
 	packet << packetCount;
+
 	packetMap[packetCount++] = packetInfo;
 	int probabilty = probLossManager.generate_prob();
 	if (probabilty > PKT_LOSS_PROB)
@@ -84,7 +91,7 @@ UDPClientManager::Status UDPClientManager::ReSend(sf::Packet& packet, int packet
 void UDPClientManager::Bind()
 {
 	sf::Socket::Status status = _socket.bind(_port);
- 
+
 	while (status != sf::Socket::Status::Done)
 	{
 		_port++;
@@ -94,7 +101,10 @@ void UDPClientManager::Bind()
 
 void UDPClientManager::TryConnection(sf::String user)
 {
+	_username = user;
+	int tempId = -1;
 	sf::Packet tryConnectionPacket;
+	tryConnectionPacket << tempId;
 	tryConnectionPacket << (int)PacketType::TRYCONNECTION;
 	tryConnectionPacket << user;
 	std::cout << "Trying Connection (client)" << std::endl;
@@ -113,74 +123,87 @@ void UDPClientManager::Receive()
 		sf::String user;
 		if (status == sf::Socket::Done)
 		{
+
 			int type;
 			packet >> type;//sempre rebem primer el type
 			switch ((PacketType)type)
 			{
-				case PacketType::CHALLENGE:
+			case PacketType::CHALLENGE:
+			{
+				if (_setId)
 				{
-					isChallenge = true;
-					
-					packet >> challengeNumber1;
-					packet >> challengeNumber2;
+					_setId = false;
 
-					int packetId;
-					packet >> packetId;
-
-					sf::Packet challengePacket;
-					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
-
-					SendACKToServer(sf::IpAddress("127.0.0.1"), 5000, packetId);
-
-					break;
+					int clientId;
+					packet >> clientId;
+					_client.id = clientId;
 				}
 
-				case PacketType::CANCONNECT:
-				{
-					packet >> id;
-					isChallenge = false;
-					std::cout << "CAN Connect id:" << id<< std::endl;
-					selectMatchMakingOption = true;
-					int id;
-					packet >> id;
-					SendACKToServer(remoteIp, remotePort, id);
-					break;
-				}
-				case PacketType::CANNOTCONNECT:
-				{
-					isChallenge = true;
+				isChallenge = true;
 
-					
-					packet >> challengeNumber1;
-					packet >> challengeNumber2;
-					sf::Packet challengePacket;
-					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
-					int id;
-					packet >> id;
-					SendACKToServer(remoteIp, remotePort, id);
-					break;
-				}
-				case PacketType::DISCONNECT:
-				{
-					Disconnect();
-					break;
-				}
-				case PacketType::PING:
-				{
-					sf::Packet pongPacket;
-					pongPacket << (int)PacketType::PONG;
-					pongPacket << id;
-					//Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
-				}
-				case PacketType::ACK:
-				{
-					int tempID;
-					packet >> tempID;
-					std::cout << "recieved ack from server" << std::endl;
-					packetsToDelete.push_back(tempID);
-					break;
-				}
-				
+				packet >> challengeNumber1;
+				packet >> challengeNumber2;
+
+				int packetId;
+				packet >> packetId;
+
+				sf::Packet challengePacket;
+				std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+				// Això no es printa. Hi ha quelcom que té prioritat i es printa per sobre (crec que la 108 de game.cpp).
+
+				SendACKToServer(sf::IpAddress("127.0.0.1"), 5000, packetId);
+
+				break;
+			}
+
+			case PacketType::CANCONNECT:
+			{
+				int clientId;
+				packet >> clientId;
+				_client = Client(_username, clientId);
+				isChallenge = false;
+				std::cout << "CAN Connect id:" << id << std::endl;
+				selectMatchMakingOption = true;
+				int packetId;
+				packet >> packetId;
+				SendACKToServer(remoteIp, remotePort, packetId);
+				break;
+			}
+			case PacketType::CANNOTCONNECT:
+			{
+				isChallenge = true;
+
+
+				packet >> challengeNumber1;
+				packet >> challengeNumber2;
+				sf::Packet challengePacket;
+				std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+				int id;
+				packet >> id;
+				SendACKToServer(remoteIp, remotePort, id);
+				break;
+			}
+			case PacketType::DISCONNECT:
+			{
+				Disconnect();
+				break;
+			}
+			case PacketType::PING:
+			{
+				sf::Packet pongPacket;
+				pongPacket << (int)PacketType::PONG;
+				pongPacket << id;
+				//Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
+			}
+			case PacketType::ACK:
+			{
+				int tempID;
+				packet >> tempID;
+				std::cout << "recieved ack from server         -->" <<tempID << std::endl;
+				packetsToDelete.push_back(tempID);
+				break;
+			}
+
 			}
 		}
 	}
@@ -222,7 +245,7 @@ void UDPClientManager::CheckTimeStamp()
 			{
 				packetMap.erase(id);
 			}
-			packetsToDelete.clear();
+			
 		}
 	}
 }
@@ -231,9 +254,11 @@ void UDPClientManager::SendACKToServer(sf::IpAddress remoteIP, unsigned short re
 {
 	sf::Packet ACKpacket;
 	sf::Socket::Status status;
-
+	ACKpacket << _client.id;
 	ACKpacket << (int)PacketType::ACK;
 	ACKpacket << id;
+
+
 	int probabilty = probLossManager.generate_prob();
 	if (probabilty > PKT_LOSS_PROB)
 	{
@@ -245,6 +270,8 @@ void UDPClientManager::SendChallenge(int result)
 {
 	sf::Packet tryChallenge;
 	std::cout << result;
+
+	tryChallenge << _client.id;
 	tryChallenge << (int)PacketType::CHALLENGE;
 	tryChallenge << result;
 
@@ -257,11 +284,13 @@ void UDPClientManager::SendSelectMatchMakingType(int result)
 
 	selectMatchMakingOption = false;
 	_startPlaying = true;
-	
+
 	sf::Packet matchMakingPacket;
+	matchMakingPacket << _client.id;
 	matchMakingPacket << (int)PacketType::MATCHMAKINGMODE;
 	matchMakingPacket << result;
-	
-		Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
-	
+	matchMakingPacket << _username;
+
+	Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
+
 }

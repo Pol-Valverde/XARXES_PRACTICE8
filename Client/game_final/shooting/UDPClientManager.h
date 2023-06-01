@@ -20,8 +20,9 @@ class UDPClientManager
         Client(std::string _username) {
             username = _username;
         }
-        Client(std::string _username, sf::IpAddress _ip, unsigned short _port, int _id)
-            : username(_username), ip(_ip), port(_port), id(_id) {}
+        Client() = default;
+        Client(std::string _username, int _id)
+            : username(_username), id(_id) {}
     };
 
     struct PacketInfo // Serveix tant per paquets enviats com pels paquets de tipus ACK.
@@ -73,19 +74,20 @@ private:
     PacketLoss probLossManager;
     std::map<int, PacketInfo> packetMap;
     std::vector<int> packetsToDelete;
-    int packetCount;
+    int packetCount = 0;
     int id;
+    bool _setId = true;
+    int clientId;
 public:
     int challengeNumber1, challengeNumber2;
     bool isChallenge = false;
     bool selectMatchMakingOption = false;
     bool matchMaking = false;
     bool _startPlaying;
-
-    UDPClientManager(unsigned short port, sf::IpAddress ip):_port(port),_ip(ip) 
-    { 
-        _socket.setBlocking(true); 
-    };
+    Client _client;
+    std::string _username;
+    UDPClientManager() = default;
+    UDPClientManager(unsigned short port, sf::IpAddress ip);
 
     Status Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     Status SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);

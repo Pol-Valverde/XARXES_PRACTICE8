@@ -27,7 +27,7 @@ UDPServerManager::Status UDPServerManager::ReSend(sf::Packet& packet, int packet
     sf::Socket::Status status;
     PacketInfo packetInfo = PacketInfo{ packetId, packet, std::chrono::system_clock::now(), ip, port };
     if (packetMap.find(packetId) != packetMap.end())
-    packetMap[packetId] = packetInfo;
+        packetMap[packetId] = packetInfo;
 
     int probabilty = probLossManager.generate_prob();
     if (probabilty > packetLossProb)
@@ -88,106 +88,132 @@ void UDPServerManager::Receive()
         sf::String user;
         if (status == sf::Socket::Done)
         {
+            int clientId;
+            packet >> clientId;
+
             int type;
             packet >> type;//sempre rebem primer el type
-            
+
             // Aquí gestionarem tots els diferents casos possibles de missatge (PacketType):
             switch ((PacketType)type)
             {
-                case PacketType::TRYCONNECTION:
+            case PacketType::TRYCONNECTION:
+            {
+                packet >> user;
+                std::cout << "--Username-- " << std::endl << user.toAnsiString() << std::endl;
+                CreateChallenge(remoteIp, remotePort, PacketType::CHALLENGE);
+
+                NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber2, challengeNumber1 + challengeNumber2);
+                _newConnections[std::make_pair(remoteIp, remotePort)] = newConnection;
+
+                break;
+            }
+            case PacketType::CHALLENGE:
+            {
+                int result, id;
+                packet >> result;
+                packet >> id;
+                std::cout << "Challenge packet id: ------->" << id << std::endl;;
+                std::cout << result << std::endl;
+
+                sf::Packet challengeStatusPacket;
+                SendACKToClient(remoteIp, remotePort, id);
+
+                if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                 {
-                    packet >> user;
-                    std::cout << "--Username-- "<<std::endl << user.toAnsiString()<< std::endl;
-                    CreateChallenge(remoteIp, remotePort, PacketType::CHALLENGE);
+                    NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
+                    Client tempClient = Client(tempConnection.username, tempConnection.ip, tempConnection.port);
+                    tempClient.lastMessageRecievedTs = std::chrono::system_clock::now();
+                    tempClient.lastPingSendedTs = std::chrono::system_clock::now();
+                    _clients[clientId] = tempClient;
 
-                    NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber2, challengeNumber1 + challengeNumber2);
-                    _newConnections[std::make_pair(remoteIp, remotePort)] = newConnection;
+                    _newConnections.erase(std::make_pair(remoteIp, remotePort));
+                    challengeStatusPacket << (int)PacketType::CANCONNECT;
+                    challengeStatusPacket << clientId;
+                    Send(challengeStatusPacket, remoteIp, remotePort);
 
-                    break;
                 }
-                case PacketType::CHALLENGE:
+                else
                 {
-                    int result, id;
-                    packet >> result;
-                    packet >> id;
-                    std::cout << "Challenge packet id: " << id;
-                    std::cout << result<<std::endl;
+                    CreateChallenge(remoteIp, remotePort, PacketType::CANNOTCONNECT);
 
-                    sf::Packet challengeStatusPacket;
-                    SendACKToClient(remoteIp, remotePort, id);
+                }
 
-                    if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
+                break;
+            }
+            case PacketType::MATCHMAKINGMODE:
+            {
+                std::cout << "Matchmaking" << std::endl;
+
+                int result;
+                packet >> result;
+
+                
+                
+                sf::String username;
+                packet >> username;
+
+                int id;
+                packet >> id;
+                
+                SendACKToClient(remoteIp, remotePort, id);
+               
+
+                if (result == 1)
+                {
+                    clientsCreatingMatch.push_back(clientId);
+                }
+                else if (result == 2)
+                {
+                    if (clientsCreatingMatch.size() <= 0)
                     {
-
-                        clientCurrentId++;
-                        NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
-                        Client tempClient = Client(tempConnection.username, tempConnection.ip, tempConnection.port);
-                        tempClient.lastMessageRecievedTs = std::chrono::system_clock::now();
-                        tempClient.lastPingSendedTs = std::chrono::system_clock::now();
-                        _clients[clientCurrentId] = tempClient;
-
-                        _newConnections.erase(std::make_pair(remoteIp, remotePort));
-                        challengeStatusPacket << (int)PacketType::CANCONNECT;
-                        challengeStatusPacket << clientCurrentId;
-                        Send(challengeStatusPacket, remoteIp, remotePort);
-                        
+                        clientsCreatingMatch.push_back(clientId);
                     }
                     else
                     {
-                        CreateChallenge(remoteIp, remotePort, PacketType::CANNOTCONNECT);
-                        
-                    }
+                        _matches[currentMatchID] = Match(currentMatchID, clientsCreatingMatch[0], currentMatchID);
+                        clientsCreatingMatch.erase(clientsCreatingMatch.begin());
+                        //TODO: connect both players
 
-                    break;
-                }
-                case PacketType::MATCHMAKINGMODE:
-                {
-                    int result;
-                    packet >> result;
-                    int id;
-                    packet >> id;
+                        /*char _firstUsernameLetter;
 
-                    SendACKToClient(remoteIp, remotePort, id);
-                    if (result == 1)
-                    {
-                        clientsCreatingMatch.push_back(clientCurrentId);
-                    }
-                    else if (result == 2 )
-                    {
-                        if (clientsCreatingMatch.size() <= 0) {
-                            clientsCreatingMatch.push_back(clientCurrentId);
+                        for (char c : username)
+                        {
+                            _firstUsernameLetter = c;
+                            break;
                         }
-                        else {
-                            _matches[currentMatchID] = Match(currentMatchID, clientsCreatingMatch[0], currentMatchID);
-                            clientsCreatingMatch.erase(clientsCreatingMatch.begin());
-                            //TODO: connect both players
-                        }
-                        
+
+                        for (int clientId : clientsCreatingMatch)
+                        {
+
+                        }*/
                     }
-                    break;
                 }
-                case PacketType::PONG:
-                {
-                    int tempId;
-                    packet >> tempId;
-                    std::cout << "recieved pong" << std::endl;
-                    _clients[tempId].lastPingSendedTs = std::chrono::system_clock::now();
-                    _clients[tempId].lastMessageRecievedTs = std::chrono::system_clock::now();
-                    _clients[tempId].pingCounter = 0;
-                    _clients[tempId].firstPingSended = false;
+                
+                break;
+            }
+            case PacketType::PONG:
+            {
+                int tempId;
+                packet >> tempId;
+                std::cout << "recieved pong" << std::endl;
+                _clients[tempId].lastPingSendedTs = std::chrono::system_clock::now();
+                _clients[tempId].lastMessageRecievedTs = std::chrono::system_clock::now();
+                _clients[tempId].pingCounter = 0;
+                _clients[tempId].firstPingSended = false;
 
-                    break;
-                }
-                case PacketType::ACK:
-                {
-                    int tempID;
-                    packet >> tempID;
+                break;
+            }
+            case PacketType::ACK:
+            {
+                int tempID;
+                packet >> tempID;
 
-                    std::cout << "recieved ack client" << std::endl;
-                    packetsToDelete.push_back(tempID);
+                std::cout << "recieved ack client" << std::endl;
+                packetsToDelete.push_back(tempID);
 
-                    break;
-                }
+                break;
+            }
             }
         }
     }
@@ -196,7 +222,10 @@ void UDPServerManager::Receive()
 void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort, PacketType pt)
 {
     sf::Packet challengePacket;
+
+    
     challengePacket << (int)pt;
+    challengePacket << clientCurrentId++;
     challengeNumber1 = rand() % 51;
     challengeNumber2 = rand() % 51;
     challengePacket << challengeNumber1;
@@ -227,7 +256,7 @@ void UDPServerManager::SendACKToClient(sf::IpAddress remoteIP, unsigned short re
 
 void UDPServerManager::CheckPing()
 {
-    while (true) 
+    while (true)
     {
         if (_clients.size() > 0) {
 
@@ -237,7 +266,7 @@ void UDPServerManager::CheckPing()
             {
                 if (!(client.second.firstPingSended))
                 {
-                    
+
 
                     if ((current_time - client.second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
                     {
@@ -247,15 +276,15 @@ void UDPServerManager::CheckPing()
                         sf::Packet pingPacket;
                         std::cout << "FIRST PING" << std::endl;
                         pingPacket << (int)PacketType::PING;
-                        Send(pingPacket, client.second.ip, client.second.port);                        
+                        Send(pingPacket, client.second.ip, client.second.port);
                     }
                 }
                 else {
-                    if ( ((current_time - client.second.lastPingSendedTs) >= std::chrono::milliseconds(2000))  && (client.second.pingCounter<5) )
+                    if (((current_time - client.second.lastPingSendedTs) >= std::chrono::milliseconds(2000)) && (client.second.pingCounter < 5))
                     {
                         client.second.pingCounter++;
                         sf::Packet pingPacket;
-                        
+
                         std::cout << " PING" << std::endl;
                         pingPacket << (int)PacketType::PING;
                         Send(pingPacket, client.second.ip, client.second.port);
@@ -320,7 +349,7 @@ void UDPServerManager::GetLineFromCin()
     {
         sf::Packet disconnectionPacket;
         std::getline(std::cin, line);
-        if ( line == "exit") {
+        if (line == "exit") {
             disconnectionPacket << (int)PacketType::DISCONNECT;
             for (std::pair<int, Client> client : _clients) {
                 Send(disconnectionPacket, client.second.ip, client.second.port);
@@ -339,7 +368,7 @@ void UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, uns
     {
         status = _socket.send(packet, ip, port);
     }
-  
+
 
 }
 
