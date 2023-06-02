@@ -87,7 +87,7 @@ public:
     bool _startPlaying;
     Client _client;
     int packetLossProb = 5;
-    std::string _username;
+    sf::String _username;
     UDPClientManager() = default;
     UDPClientManager(unsigned short port, sf::IpAddress ip);
 

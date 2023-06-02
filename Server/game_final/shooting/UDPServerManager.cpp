@@ -149,13 +149,15 @@ void UDPServerManager::Receive()
                     int result;
                     packet >> result;
 
-                
+                   
                 
                     sf::String username;
                     packet >> username;
-
+                    std::cout << "Username ----------->" << username.toAnsiString() << std::endl;
                     int id;
                     packet >> id;
+                    
+                    std::cout << "ID ----------->" << id << std::endl;
                 
                     SendACKToClient(remoteIp, remotePort, id);
                
@@ -381,7 +383,7 @@ void UDPServerManager::StorePacketRTT(int _packetId)
     std::chrono::system_clock::time_point _packetFirstTimeSend = packetMap.find(_packetId)->second.firstTimeSent;
     std::chrono::system_clock::time_point _now = std::chrono::system_clock::now();
     
-   float mssgRTT = std::chrono::duration_cast<std::chrono::milliseconds>(_now - _packetFirstTimeSend).count();
+    long mssgRTT = (long)std::chrono::duration_cast<std::chrono::milliseconds>(_now - _packetFirstTimeSend).count();
 
     _packetRTTs.push_back(mssgRTT);
     std::cout << "mssgRTT" << mssgRTT;

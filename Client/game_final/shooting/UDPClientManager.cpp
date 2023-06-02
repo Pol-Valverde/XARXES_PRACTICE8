@@ -21,6 +21,7 @@ UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddres
 	int probabilty = probLossManager.generate_prob();
 	if (probabilty > packetLossProb)
 	{
+		std::cout << "PacketCount : " << packetCount<<std::endl;
 		status = _socket.send(packet, ip, port);
 	}
 	packet.clear();
@@ -283,7 +284,6 @@ void UDPClientManager::SendChallenge(int result)
 
 void UDPClientManager::SendSelectMatchMakingType(int result)
 {
-
 	selectMatchMakingOption = false;
 	_startPlaying = true;
 

@@ -19,8 +19,8 @@ int main()
     std::thread checkTimeStamp(&UDPServerManager::CheckTimeStamp, serverManager);
     checkTimeStamp.detach();
     
-    std::thread averageRTT(&UDPServerManager::CalculateAverageRTT, serverManager);
-    averageRTT.detach();
+    //std::thread averageRTT(&UDPServerManager::CalculateAverageRTT, serverManager);
+    //averageRTT.detach();
 
     Game g;
     g.run(serverManager);
