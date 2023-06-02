@@ -11,16 +11,19 @@ UDPClientManager::UDPClientManager(unsigned short port, sf::IpAddress ip) :_port
 
 UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+	packetCount++;
 	sf::Socket::Status status;
 	PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
 	packet << packetCount;
 
-	packetMap[packetCount++] = packetInfo;
+	packetMap[packetCount] = packetInfo;
+	
 	int probabilty = probLossManager.generate_prob();
-	if (probabilty > PKT_LOSS_PROB)
+	if (probabilty > packetLossProb)
 	{
 		status = _socket.send(packet, ip, port);
 	}
+	packet.clear();
 	return Status();
 }
 
@@ -43,7 +46,7 @@ UDPClientManager::Status UDPClientManager::ReSend(sf::Packet& packet, int packet
 
 	packetMap[packetId] = packetInfo;
 	int probabilty = probLossManager.generate_prob();
-	if (probabilty > PKT_LOSS_PROB)
+	if (probabilty > packetLossProb)
 	{
 		status = _socket.send(packet, ip, port);
 	}
@@ -258,9 +261,8 @@ void UDPClientManager::SendACKToServer(sf::IpAddress remoteIP, unsigned short re
 	ACKpacket << (int)PacketType::ACK;
 	ACKpacket << id;
 
-
 	int probabilty = probLossManager.generate_prob();
-	if (probabilty > PKT_LOSS_PROB)
+	if (probabilty > packetLossProb)
 	{
 		status = _socket.send(ACKpacket, remoteIP, remotePort);
 	}

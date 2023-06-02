@@ -46,6 +46,19 @@ void Game::run(UDPClientManager* client)
 				window.close(); // Close windows if X is pressed 
 				break;
 			case sf::Event::KeyPressed:
+
+				if (event.key.code == sf::Keyboard::P)
+				{
+					client->packetLossProb += 10;
+					std::cout << "packet Loss Prob = " << client->packetLossProb << std::endl;
+				}
+				else if (event.key.code == sf::Keyboard::L)
+				{
+					client->packetLossProb -= 10;
+					std::cout << "packet Loss Prob = " << client->packetLossProb << std::endl;
+				}
+
+
 				if (event.key.code == sf::Keyboard::Escape)
 					window.close(); // Close windows if ESC is pressed 
 				if (playing) { // Manage events when playing

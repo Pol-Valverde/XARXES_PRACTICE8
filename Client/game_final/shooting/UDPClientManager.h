@@ -78,6 +78,7 @@ private:
     int id;
     bool _setId = true;
     int clientId;
+    
 public:
     int challengeNumber1, challengeNumber2;
     bool isChallenge = false;
@@ -85,6 +86,7 @@ public:
     bool matchMaking = false;
     bool _startPlaying;
     Client _client;
+    int packetLossProb = 5;
     std::string _username;
     UDPClientManager() = default;
     UDPClientManager(unsigned short port, sf::IpAddress ip);
