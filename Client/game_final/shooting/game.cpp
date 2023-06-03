@@ -40,6 +40,15 @@ void Game::run(UDPClientManager* client)
 	{
 		while (window.pollEvent(event))
 		{
+
+			if (client->UpdatePosition) {
+				std::cout << "youyouyou" << std::endl;
+				character.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
+				client->UpdatePosition = false;
+			}
+
+
+
 			switch (event.type)
 			{
 			case sf::Event::Closed:
@@ -65,15 +74,39 @@ void Game::run(UDPClientManager* client)
 					// Checking Movement
 					cDir.x = 0;
 					cDir.y = 0;
-					if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+
+					if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
 						cDir.y--;
+						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::UP));
+						client->commandStack.push_back(character.GetPos().x + cDir.x);
+						client->commandStack.push_back(character.GetPos().y + cDir.y);
+					}
 					else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+					{
 						cDir.y++;
+						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::DOWN));
+						client->commandStack.push_back(character.GetPos().x + cDir.x);
+						client->commandStack.push_back(character.GetPos().y + cDir.y);
+					}
 					if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+					{
 						cDir.x--;
+						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::LEFT));
+						client->commandStack.push_back(character.GetPos().x + cDir.x);
+						client->commandStack.push_back(character.GetPos().y + cDir.y);
+					}
 					else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+					{
 						cDir.x++;
+						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::RIGHT));
+						client->commandStack.push_back(character.GetPos().x + cDir.x);
+						client->commandStack.push_back(character.GetPos().y + cDir.y);
+					}
+
+					//client->SendDesiredMove(character.GetPos().x + cDir.x, character.GetPos().y + cDir.y);
+					//client->commandStack.push_back();
 					character.Move(cDir);
+					
 					// Managing Shooting
 					if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
 						cDir.x = 1; // Default shoot direction
@@ -151,7 +184,9 @@ void Game::run(UDPClientManager* client)
 				else if (client->_startPlaying)
 				{
 					playing = true;
+					client->SendInitialPosition(character.GetPos().x,character.GetPos().y);
 				}
+				
 			}
 		}
 		window.clear();

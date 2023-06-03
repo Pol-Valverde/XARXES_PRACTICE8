@@ -133,84 +133,91 @@ void UDPClientManager::Receive()
 			std::cout << type;
 			switch ((PacketType)type)
 			{
-			case PacketType::CHALLENGE:
-			{
-				if (_setId)
+				case PacketType::CHALLENGE:
 				{
-					_setId = false;
+					if (_setId)
+					{
+						_setId = false;
 
-					int clientId;
-					packet >> clientId;
-					_client.id = clientId;
+						int clientId;
+						packet >> clientId;
+						_client.id = clientId;
+					}
+
+					isChallenge = true;
+
+					packet >> challengeNumber1;
+					packet >> challengeNumber2;
+
+					int packetId;
+					packet >> packetId;
+
+					sf::Packet challengePacket;
+					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+					// Això no es printa. Hi ha quelcom que té prioritat i es printa per sobre (crec que la 108 de game.cpp).
+
+					SendACKToServer(sf::IpAddress("127.0.0.1"), 5000, packetId);
+
+					break;
 				}
 
-				isChallenge = true;
-
-				packet >> challengeNumber1;
-				packet >> challengeNumber2;
-
-				int packetId;
-				packet >> packetId;
-
-				sf::Packet challengePacket;
-				std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
-				// Això no es printa. Hi ha quelcom que té prioritat i es printa per sobre (crec que la 108 de game.cpp).
-
-				SendACKToServer(sf::IpAddress("127.0.0.1"), 5000, packetId);
-
-				break;
-			}
-
-			case PacketType::CANCONNECT:
-			{
-				int clientId;
-				packet >> clientId;
-				_client = Client(_username, clientId);
-				isChallenge = false;
-				std::cout << "CAN Connect id:" << id << std::endl;
-				selectMatchMakingOption = true;
-				int packetId;
-				packet >> packetId;
-				SendACKToServer(remoteIp, remotePort, packetId);
-				break;
-			}
-			case PacketType::CANNOTCONNECT:
-			{
-				isChallenge = true;
+				case PacketType::CANCONNECT:
+				{
+					int clientId;
+					packet >> clientId;
+					_client = Client(_username, clientId);
+					isChallenge = false;
+					std::cout << "CAN Connect id:" << id << std::endl;
+					selectMatchMakingOption = true;
+					int packetId;
+					packet >> packetId;
+					SendACKToServer(remoteIp, remotePort, packetId);
+					break;
+				}
+				case PacketType::CANNOTCONNECT:
+				{
+					isChallenge = true;
 
 
-				packet >> challengeNumber1;
-				packet >> challengeNumber2;
-				sf::Packet challengePacket;
-				std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
-				int id;
-				packet >> id;
-				SendACKToServer(remoteIp, remotePort, id);
-				break;
-			}
-			case PacketType::DISCONNECT:
-			{
-				Disconnect();
-				break;
-			}
-			case PacketType::PING:
-			{
-				std::cout << "Ping Recived :)" << std::endl;
-				sf::Packet pongPacket;
-				pongPacket << _client.id;
-				pongPacket << (int)PacketType::PONG;
+					packet >> challengeNumber1;
+					packet >> challengeNumber2;
+					sf::Packet challengePacket;
+					std::cout << "solve this math operation: " << challengeNumber1 << "+" << challengeNumber2 << std::endl;
+					int id;
+					packet >> id;
+					SendACKToServer(remoteIp, remotePort, id);
+					break;
+				}
+				case PacketType::DISCONNECT:
+				{
+					Disconnect();
+					break;
+				}
+				case PacketType::PING:
+				{
+					std::cout << "Ping Recived :)" << std::endl;
+					sf::Packet pongPacket;
+					pongPacket << _client.id;
+					pongPacket << (int)PacketType::PONG;
 
-				SendNonCritical(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
-			}
-			case PacketType::ACK:
-			{
-				int tempID;
-				packet >> tempID;
-				std::cout << "recieved ack from server         -->" <<tempID << std::endl;
-				packetsToDelete.push_back(tempID);
-				break;
-			}
-
+					SendNonCritical(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
+				}
+				case PacketType::ACK:
+				{
+					int tempID;
+					packet >> tempID;
+					std::cout << "recieved ack from server         -->" <<tempID << std::endl;
+					packetsToDelete.push_back(tempID);
+					break;
+				}
+				case PacketType::MOVEMENT:
+				{
+					
+					packet >> _client.posX;
+					packet >> _client.posY;
+					UpdatePosition = true;
+					break;
+				}
 			}
 		}
 	}
@@ -298,4 +305,40 @@ void UDPClientManager::SendSelectMatchMakingType(int result)
 
 	Send(matchMakingPacket, sf::IpAddress("127.0.0.1"), 5000);
 
+}
+
+void UDPClientManager::SendDesiredMove()
+{
+	while (true)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(80));
+
+		if (commandStack.size() > 0)
+		{
+
+			sf::Packet movementPacket;
+			movementPacket << _client.id;
+			movementPacket << (int)PacketType::MOVEMENT;
+
+
+			for (int command : commandStack) {
+				movementPacket << command;
+			}
+			SendNonCritical(movementPacket, sf::IpAddress("127.0.0.1"), 5000);
+			commandStack.clear();
+		}
+
+		//enviar comandos acumulados
+	}
+}
+
+void UDPClientManager::SendInitialPosition(int x, int y)
+{
+	sf::Packet initialPosPacket;
+	initialPosPacket << _client.id;
+	initialPosPacket << (int)PacketType::INITIALPOS;
+	initialPosPacket << x;
+	initialPosPacket << y;
+	Send(initialPosPacket, sf::IpAddress("127.0.0.1"), 5000);
+	commandStack.clear();
 }

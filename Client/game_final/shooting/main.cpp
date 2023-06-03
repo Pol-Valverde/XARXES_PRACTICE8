@@ -12,6 +12,9 @@ int main()
     std::thread checkTimeStamp(&UDPClientManager::CheckTimeStamp, client);
     checkTimeStamp.detach();
 
+    std::thread sendMovement(&UDPClientManager::SendDesiredMove, client);
+    sendMovement.detach();
+
     Game g;
     g.run(client); 
 }

@@ -23,6 +23,8 @@ public:
         std::chrono::system_clock::time_point lastPingSendedTs;
         bool firstPingSended = false;
         int pingCounter = 0;
+        int posX;
+        int posY;
 
         Client() = default;
 
@@ -100,13 +102,32 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        MOVEMENT,
+        INITIALPOS,
         PING,
         PONG,
         MESSAGE,            // Packet to send a message to the global chat
         ACK,
         DISCONNECT          // Packet to disconnect
     };
+    public:
+        enum class MoveType
+        {
+            UP,
+            DOWN,
+            LEFT,
+            RIGHT,
+            SHOOTLEFT,
+            SHOOTLEFTUP,
+            SHOOTRIGHT,
+            SHOOTRIGHTUP,
+            SHOOTUP,
+            SHOOTLEFTDOWN,
+            SHOOTDOWN,
+            SHOOTRIGHTDOWN
+        };
 
+private:
     // ------ VARIABLES: ------
     sf::UdpSocket _socket;
     unsigned short _port;
@@ -143,5 +164,6 @@ public:
     Status SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     void StorePacketRTT(int _packetId);
     void CalculateAverageRTT();
+    void ValidateCommands();
 };
 

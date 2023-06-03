@@ -217,7 +217,7 @@ void UDPServerManager::Receive()
                     std::cout << "recieved pong" << std::endl;
                     _clients[clientId].lastPingSendedTs = std::chrono::system_clock::now();
                     _clients[clientId].lastMessageRecievedTs = std::chrono::system_clock::now();
-                    _clients[clientId].pingCounter = 0;
+                   // _clients[clientId].pingCounter = 0;
                     _clients[clientId].firstPingSended = false;
 
                     break;
@@ -231,6 +231,147 @@ void UDPServerManager::Receive()
                     packetsToDelete.push_back(tempID);
 
                     
+
+                    break;
+                }
+                case PacketType::MOVEMENT:
+                {
+                  
+
+                    int move;
+                    int desiredMoveX;
+                    int desiredMoveY;
+
+                    while (!packet.endOfPacket())
+                    {
+                        packet >> move;
+
+                        switch ((MoveType)move)
+                        {
+                        case MoveType::DOWN:
+                        {
+                            packet >> desiredMoveX;
+                            packet >> desiredMoveY;
+                            std::cout << "recieved movement packet" << std::endl;
+                            int tempNewPosX = _clients[clientId].posX + 0;
+                            int tempNewPosY = _clients[clientId].posY + 1;
+
+                            sf::Packet newPlayerPosPacket;
+
+                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
+                                std::cout << "nice cock santiago" << std::endl;
+                            }
+                            else
+                            {
+                                _clients[clientId].posX = tempNewPosX;
+                                _clients[clientId].posY = tempNewPosY;
+
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+
+                            }
+
+                            SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+
+                            break;
+                        }
+                        case MoveType::UP:
+                        {
+                            packet >> desiredMoveX;
+                            packet >> desiredMoveY;
+                            std::cout << "recieved movement packet" << std::endl;
+                            int tempNewPosX = _clients[clientId].posX + 0;
+                            int tempNewPosY = _clients[clientId].posY - 1;
+
+                            sf::Packet newPlayerPosPacket;
+
+                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
+                                std::cout << "nice cock santiago" << std::endl;
+                            }
+                            else
+                            {
+                                _clients[clientId].posX = tempNewPosX;
+                                _clients[clientId].posY = tempNewPosY;
+
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+
+                            }
+
+                            SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+
+                            break;
+                        }
+                        case MoveType::RIGHT:
+                        {
+                            packet >> desiredMoveX;
+                            packet >> desiredMoveY;
+                            std::cout << "recieved movement packet" << std::endl;
+                            int tempNewPosX = _clients[clientId].posX + 1;
+                            int tempNewPosY = _clients[clientId].posY - 0;
+
+                            sf::Packet newPlayerPosPacket;
+
+                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
+                                std::cout << "nice cock santiago" << std::endl;
+                            }
+                            else
+                            {
+                                _clients[clientId].posX = tempNewPosX;
+                                _clients[clientId].posY = tempNewPosY;
+
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+
+                            }
+
+                            SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+
+                            break;
+                        }
+                        case MoveType::LEFT:
+                        {
+                            packet >> desiredMoveX;
+                            packet >> desiredMoveY;
+                            std::cout << "recieved movement packet" << std::endl;
+                            int tempNewPosX = _clients[clientId].posX - 1;
+                            int tempNewPosY = _clients[clientId].posY - 0;
+
+                            sf::Packet newPlayerPosPacket;
+
+                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
+                                std::cout << "nice cock santiago" << std::endl;
+                            }
+                            else
+                            {
+                                _clients[clientId].posX = tempNewPosX;
+                                _clients[clientId].posY = tempNewPosY;
+
+                                newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+
+                            }
+
+                            SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+
+                            break;
+                        }
+
+                        }
+                    }
+
+                    break;
+                }
+                case PacketType::INITIALPOS:
+                {
+                    int packetID;
+                    packet >> _clients[clientId].posX;
+                    packet >> _clients[clientId].posY;
+                    packet >> packetID;
+
+                    SendACKToClient(remoteIp,remotePort,packetID);
+
+                    std::cout << "Init position test -> X: " << _clients[clientId].posX << " Y: " << _clients[clientId].posY << std::endl;
 
                     break;
                 }
@@ -441,6 +582,14 @@ void UDPServerManager::CalculateAverageRTT()
         }
 
         std::cout << "RTT: " << average << std::endl;
+    }
+}
+
+void UDPServerManager::ValidateCommands()
+{
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(80));
+
     }
 }
 

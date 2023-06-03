@@ -67,6 +67,10 @@ void Character::Move(sf::Vector2f dir)
 	sprite.setPosition((pos.x+dir.x)*SIZE, (pos.y + dir.y)*SIZE);
 	SetPos(sf::Vector2f((pos.x + dir.x), (pos.y + dir.y)));
 }
+void Character::Teleport(sf::Vector2f newPos) {
+	sprite.setPosition((newPos.x) * SIZE, (newPos.y) * SIZE);
+	SetPos(sf::Vector2f((newPos.x ), (newPos.y)));
+}
 
 void Character::SetPos(sf::Vector2f newPos)
 {

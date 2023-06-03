@@ -35,6 +35,7 @@ public:
 	void SetPos(sf::Vector2f newPos);
 	void SetLife(int l); // No implemented
 	int GetLife();       // No implemented
+	void Character::Teleport(sf::Vector2f newPos);
 	bool CheckShoot(Bullet b);   // Returns true if a bullet reaches the character
 	bool OutOfBounds();  // Returns true if character is out-of-bounds
 	void Move(sf::Vector2f dir);

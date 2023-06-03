@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include "PacketLoss.h"
+#include <thread>
 
 class UDPClientManager
 {
@@ -16,6 +17,8 @@ class UDPClientManager
         std::string username;
         unsigned int id; // NEW: added this
         int ts; // NEW: added this
+        int posX = 10;
+        int posY = 10;
 
         Client(std::string _username) {
             username = _username;
@@ -60,6 +63,8 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        MOVEMENT,
+        INITIALPOS,
         PING,
         PONG,
         MESSAGE,            // Packet to send a message to the global chat
@@ -67,6 +72,25 @@ private:
         DISCONNECT          // Packet to disconnect
     };
 
+public:
+    bool UpdatePosition = false;
+    enum class MoveType
+    {
+        UP,     
+        DOWN,
+        LEFT,
+        RIGHT,     
+        SHOOTLEFT,          
+        SHOOTLEFTUP,
+        SHOOTRIGHT,    
+        SHOOTRIGHTUP,     
+        SHOOTUP,
+        SHOOTLEFTDOWN,
+        SHOOTDOWN,
+        SHOOTRIGHTDOWN
+    };
+
+private:
     //VARIBLES:
     sf::UdpSocket _socket;
     unsigned short _port = 5001;
@@ -78,8 +102,10 @@ private:
     int id;
     bool _setId = true;
     int clientId;
+    std::vector<MoveType> moveType;
     
 public:
+    std::vector<int> commandStack;
     int challengeNumber1, challengeNumber2;
     bool isChallenge = false;
     bool selectMatchMakingOption = false;
@@ -102,5 +128,7 @@ public:
     void SendACKToServer(sf::IpAddress remoteIP, unsigned short remotePort, int id);
     void SendChallenge(int result);
     void SendSelectMatchMakingType(int result);
+    void SendDesiredMove();
+    void SendInitialPosition(int x,int y);
 };
 
