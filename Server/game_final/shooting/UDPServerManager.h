@@ -4,7 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
-
+#include <thread>
 #include "PacketLoss.h"
 
 class UDPServerManager
@@ -140,7 +140,7 @@ public:
     void CheckPing();
     void CheckTimeStamp();
     void GetLineFromCin();
-    void SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
+    Status SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port);
     void StorePacketRTT(int _packetId);
     void CalculateAverageRTT();
 };

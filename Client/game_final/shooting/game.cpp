@@ -137,7 +137,7 @@ void Game::run(UDPClientManager* client)
 					{
 						input.erase(input.getSize() - 1, input.getSize());
 					}
-					message =  "1 --> find match   2--> create match ";
+					message =  "1 -->create match    2-->find match  ";
 					text.setString(message);
 					window.draw(text);
 					if (event.key.code == sf::Keyboard::Return && input.getSize() > 0)

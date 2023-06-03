@@ -33,7 +33,7 @@ UDPClientManager::Status UDPClientManager::SendNonCritical(sf::Packet& packet, s
 	sf::Socket::Status status;
 
 	status = _socket.send(packet, ip, port);
-
+	packet.clear();
 	return Status();
 }
 
@@ -130,6 +130,7 @@ void UDPClientManager::Receive()
 
 			int type;
 			packet >> type;//sempre rebem primer el type
+			std::cout << type;
 			switch ((PacketType)type)
 			{
 			case PacketType::CHALLENGE:
@@ -194,10 +195,12 @@ void UDPClientManager::Receive()
 			}
 			case PacketType::PING:
 			{
+				std::cout << "Ping Recived :)" << std::endl;
 				sf::Packet pongPacket;
+				pongPacket << _client.id;
 				pongPacket << (int)PacketType::PONG;
-				pongPacket << id;
-				//Send(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
+
+				SendNonCritical(pongPacket, sf::IpAddress("127.0.0.1"), 5000);
 			}
 			case PacketType::ACK:
 			{

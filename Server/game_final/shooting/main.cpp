@@ -13,14 +13,14 @@ int main()
     std::thread getLine(&UDPServerManager::GetLineFromCin, serverManager);
     getLine.detach();
 
-    //std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
-    //checkPing.detach();
+    std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
+    checkPing.detach();
 
     std::thread checkTimeStamp(&UDPServerManager::CheckTimeStamp, serverManager);
     checkTimeStamp.detach();
     
-    //std::thread averageRTT(&UDPServerManager::CalculateAverageRTT, serverManager);
-    //averageRTT.detach();
+    std::thread averageRTT(&UDPServerManager::CalculateAverageRTT, serverManager);
+    averageRTT.detach();
 
     Game g;
     g.run(serverManager);

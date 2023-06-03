@@ -123,7 +123,8 @@ void UDPServerManager::Receive()
                     if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                     {
                         NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
-                        Client tempClient = Client(tempConnection.username, tempConnection.ip, tempConnection.port);
+                        std::cout << "USERNAME" << tempConnection.username << "IP " << tempConnection.ip << "PORT " << tempConnection.port << std::endl;
+                        Client tempClient = Client(tempConnection.username, remoteIp, remotePort);
                         tempClient.lastMessageRecievedTs = std::chrono::system_clock::now();
                         tempClient.lastPingSendedTs = std::chrono::system_clock::now();
                         _clients[clientId] = tempClient;
@@ -156,7 +157,7 @@ void UDPServerManager::Receive()
                     std::cout << "Username ----------->" << username.toAnsiString() << std::endl;
                     int id;
                     packet >> id;
-                    
+                    _clients[clientId].username = username;
                     std::cout << "ID ----------->" << id << std::endl;
                 
                     SendACKToClient(remoteIp, remotePort, id);
@@ -164,32 +165,48 @@ void UDPServerManager::Receive()
 
                     if (result == 1)
                     {
+                        _matches[currentMatchID] = Match(currentMatchID, clientId, -1);
+                        currentMatchID++;
+
                         clientsCreatingMatch.push_back(clientId);
                     }
                     else if (result == 2)
                     {
                         if (clientsCreatingMatch.size() <= 0)
                         {
+                            _matches[currentMatchID] = Match(currentMatchID, clientId, -1);
+                            currentMatchID++;
+
                             clientsCreatingMatch.push_back(clientId);
                         }
                         else
                         {
-                            _matches[currentMatchID] = Match(currentMatchID, clientsCreatingMatch[0], currentMatchID);
-                            clientsCreatingMatch.erase(clientsCreatingMatch.begin());
-                            //TODO: connect both players
+                            char _firstUsernameLetter = username[0];
 
-                            /*char _firstUsernameLetter;
+                            int _minimumCharDifference = 255;
+                            int _charDifferenceRange;
+                            int _matchToJoinId;
 
-                            for (char c : username)
+                            for (auto m : _matches)
                             {
-                                _firstUsernameLetter = c;
-                                break;
+                                if (m.second.clientID2 != -1)
+                                {
+                                    char _waitingClientFirstLetter = _clients[m.second.clientID2].username[0];
+                                    
+                                    _charDifferenceRange = std::abs((int)_firstUsernameLetter - (int)_waitingClientFirstLetter);
+                                
+                                    if (_charDifferenceRange < _minimumCharDifference)
+                                    {
+                                        _minimumCharDifference = _charDifferenceRange;
+
+                                        _matchToJoinId = m.first;
+                                    }
+                                }
                             }
 
-                            for (int clientId : clientsCreatingMatch)
-                            {
+                            _matches[_matchToJoinId].clientID2 = clientId;
 
-                            }*/
+                            std::cout << "Player 1 name: " << _clients[_matches[_matchToJoinId].clientID1].username << " ||| " << "Player 2 name: " << _clients[_matches[_matchToJoinId].clientID2].username << std::endl;
                         }
                     }
                 
@@ -197,13 +214,11 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::PONG:
                 {
-                    int tempId;
-                    packet >> tempId;
                     std::cout << "recieved pong" << std::endl;
-                    _clients[tempId].lastPingSendedTs = std::chrono::system_clock::now();
-                    _clients[tempId].lastMessageRecievedTs = std::chrono::system_clock::now();
-                    _clients[tempId].pingCounter = 0;
-                    _clients[tempId].firstPingSended = false;
+                    _clients[clientId].lastPingSendedTs = std::chrono::system_clock::now();
+                    _clients[clientId].lastMessageRecievedTs = std::chrono::system_clock::now();
+                    _clients[clientId].pingCounter = 0;
+                    _clients[clientId].firstPingSended = false;
 
                     break;
                 }
@@ -263,25 +278,38 @@ void UDPServerManager::CheckPing()
 {
     while (true)
     {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         if (_clients.size() > 0) {
 
             auto current_time = std::chrono::system_clock::now();
 
             for (auto client : _clients)
             {
-                if (!(client.second.firstPingSended))
+
+                if (!client.second.firstPingSended)
                 {
-
-
                     if ((current_time - client.second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
                     {
-                        //sendFirstPing
-                        client.second.firstPingSended = true;
-                        client.second.lastPingSendedTs = std::chrono::system_clock::now();
-                        sf::Packet pingPacket;
-                        std::cout << "FIRST PING" << std::endl;
-                        pingPacket << (int)PacketType::PING;
-                        Send(pingPacket, client.second.ip, client.second.port);
+                        if (client.second.pingCounter >= 6) {
+                            sf::Packet disconnectionPacket;
+                            std::cout << " Disconnected by PING" << std::endl;
+                            disconnectionPacket << (int)PacketType::DISCONNECT;
+                            SendNonCritical(disconnectionPacket, client.second.ip, client.second.port);
+                            _clients.erase(client.second.id);
+                        }
+                        else
+                        {
+                            std::cout << " PING " << std::endl;
+                            //sendFirstPing
+                            client.second.firstPingSended = true;
+                            client.second.pingCounter++;
+                            std::cout << client.second.pingCounter << std::endl;
+
+                            client.second.lastPingSendedTs = std::chrono::system_clock::now();
+                            sf::Packet pingPacket;
+                            pingPacket << (int)PacketType::PING;
+                            SendNonCritical(pingPacket, client.second.ip, client.second.port);
+                        }
                     }
                 }
                 else {
@@ -292,15 +320,15 @@ void UDPServerManager::CheckPing()
 
                         std::cout << " PING" << std::endl;
                         pingPacket << (int)PacketType::PING;
-                        Send(pingPacket, client.second.ip, client.second.port);
+                        SendNonCritical(pingPacket, client.second.ip, client.second.port);
                         client.second.lastPingSendedTs = std::chrono::system_clock::now();
                         //sendFirstPing
                     }
-                    else if (client.second.pingCounter > 5) {
+                    else if (client.second.pingCounter >= 5) {
                         sf::Packet disconnectionPacket;
                         std::cout << " Disconnected by PING" << std::endl;
                         disconnectionPacket << (int)PacketType::DISCONNECT;
-                        Send(disconnectionPacket, client.second.ip, client.second.port);
+                        SendNonCritical(disconnectionPacket, client.second.ip, client.second.port);
                         _clients.erase(client.second.id);
                     }
                 }
@@ -365,7 +393,7 @@ void UDPServerManager::GetLineFromCin()
     }
 }
 
-void UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
+UDPServerManager::Status UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
     sf::Socket::Status status;
     int probabilty = probLossManager.generate_prob();
@@ -374,7 +402,7 @@ void UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, uns
         status = _socket.send(packet, ip, port);
     }
 
-
+    return Status();
 }
 
 void UDPServerManager::StorePacketRTT(int _packetId)
@@ -391,33 +419,28 @@ void UDPServerManager::StorePacketRTT(int _packetId)
 
 void UDPServerManager::CalculateAverageRTT()
 {
-    auto lastTime = std::chrono::system_clock::now();
     while (true)
     {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
 
-        auto current_time = std::chrono::system_clock::now();
-        if ((current_time - lastTime) > std::chrono::milliseconds(2000))
-        {
-            lastTime = std::chrono::system_clock::now();
-            float average = 0;
+        float average = 0;
 
-            if (_packetRTTs.size() > 10) {
-                for (int i = _packetRTTs.size() - 11; i < _packetRTTs.size(); i++) {
-                    average += _packetRTTs[i];
-                }
-
-                average /= 10;
-            }
-            else if (_packetRTTs.size() > 0) {
-                for (int i = 0; i < _packetRTTs.size(); i++) {
-                    average += _packetRTTs[i];
-                }
-
-                average /= _packetRTTs.size();
+        if (_packetRTTs.size() > 10) {
+            for (int i = _packetRTTs.size() - 11; i < _packetRTTs.size(); i++) {
+                average += _packetRTTs[i];
             }
 
-            std::cout << "RTT: " << average << std::endl;
+            average /= 10;
         }
+        else if (_packetRTTs.size() > 0) {
+            for (int i = 0; i < _packetRTTs.size(); i++) {
+                average += _packetRTTs[i];
+            }
+
+            average /= _packetRTTs.size();
+        }
+
+        std::cout << "RTT: " << average << std::endl;
     }
 }
 
