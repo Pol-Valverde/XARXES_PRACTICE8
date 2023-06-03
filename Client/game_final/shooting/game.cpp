@@ -42,13 +42,32 @@ void Game::run(UDPClientManager* client)
 		{
 
 			if (client->UpdatePosition) {
-				std::cout << "youyouyou" << std::endl;
-				character.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
-				client->UpdatePosition = false;
+				if (client->isPlayerOne) {
+					std::cout << "youyouyou" << std::endl;
+					character.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
+					client->UpdatePosition = false;
+				}
+				else {
+					std::cout << "youyouyou" << std::endl;
+					character2.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
+					client->UpdatePosition = false;
+				}
+				
+			}
+			if (client->UpdateRivalPosition) {
+				if (client->isPlayerOne) {
+					std::cout << "rivalyouyou" << std::endl;
+					character2.Teleport(sf::Vector2f(client->_client.rivalPosX, (client->_client.rivalPosY)));
+					client->UpdateRivalPosition = false;
+				}
+				else {
+					std::cout << "rivalyouyou" << std::endl;
+					character.Teleport(sf::Vector2f(client->_client.rivalPosX, (client->_client.rivalPosY)));
+					client->UpdateRivalPosition = false;
+				}
 			}
 
-
-
+			
 			switch (event.type)
 			{
 			case sf::Event::Closed:
@@ -70,64 +89,159 @@ void Game::run(UDPClientManager* client)
 
 				if (event.key.code == sf::Keyboard::Escape)
 					window.close(); // Close windows if ESC is pressed 
-				if (playing) { // Manage events when playing
-					// Checking Movement
-					cDir.x = 0;
-					cDir.y = 0;
+				if (client->isPlayerOne) {
+					if (playing) { // Manage events when playing
+						// Checking Movement
+						cDir.x = 0;
+						cDir.y = 0;
 
-					if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-						cDir.y--;
-						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::UP));
-						client->commandStack.push_back(character.GetPos().x + cDir.x);
-						client->commandStack.push_back(character.GetPos().y + cDir.y);
-					}
-					else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-					{
-						cDir.y++;
-						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::DOWN));
-						client->commandStack.push_back(character.GetPos().x + cDir.x);
-						client->commandStack.push_back(character.GetPos().y + cDir.y);
-					}
-					if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-					{
-						cDir.x--;
-						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::LEFT));
-						client->commandStack.push_back(character.GetPos().x + cDir.x);
-						client->commandStack.push_back(character.GetPos().y + cDir.y);
-					}
-					else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-					{
-						cDir.x++;
-						client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::RIGHT));
-						client->commandStack.push_back(character.GetPos().x + cDir.x);
-						client->commandStack.push_back(character.GetPos().y + cDir.y);
-					}
-
-					//client->SendDesiredMove(character.GetPos().x + cDir.x, character.GetPos().y + cDir.y);
-					//client->commandStack.push_back();
-					character.Move(cDir);
-					
-					// Managing Shooting
-					if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-						cDir.x = 1; // Default shoot direction
-						cDir.y = 0; // Default shoot direction
-
-						if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)){
-							cDir.y = -1;
-							cDir.x = 0;
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+							cDir.y--;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::UP));
+							client->commandStack.push_back(character.GetPos().x + cDir.x);
+							client->commandStack.push_back(character.GetPos().y + cDir.y);
 						}
-						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)){
-							cDir.y = 1;
-							cDir.x = 0;
+						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+						{
+							cDir.y++;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::DOWN));
+							client->commandStack.push_back(character.GetPos().x + cDir.x);
+							client->commandStack.push_back(character.GetPos().y + cDir.y);
 						}
-						if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-							cDir.x = -1;
-						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-							cDir.x = 1;
-						bullets.push_back(Bullet(character.GetPos(), cDir));
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+						{
+							cDir.x--;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::LEFT));
+							client->commandStack.push_back(character.GetPos().x + cDir.x);
+							client->commandStack.push_back(character.GetPos().y + cDir.y);
+						}
+						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+						{
+							cDir.x++;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::RIGHT));
+							client->commandStack.push_back(character.GetPos().x + cDir.x);
+							client->commandStack.push_back(character.GetPos().y + cDir.y);
+						}
+
+						//client->SendDesiredMove(character.GetPos().x + cDir.x, character.GetPos().y + cDir.y);
+						//client->commandStack.push_back();
+						character.Move(cDir);
+
+						// Managing Shooting
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+							cDir.x = 1; // Default shoot direction
+							cDir.y = 0; // Default shoot direction
+
+							if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+								cDir.y = -1;
+								cDir.x = 0;
+							}
+							else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+								cDir.y = 1;
+								cDir.x = 0;
+							}
+							if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+								cDir.x = -1;
+							else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+								cDir.x = 1;
+							bullets.push_back(Bullet(character.GetPos(), cDir));
+						}
+						break;
 					}
-					break;
 				}
+				///////////
+				//////////
+				//////////
+				//////////
+				//////////
+				if (!client->isPlayerOne) {
+					if (playing) { // Manage events when playing
+						// Checking Movement
+						cDir.x = 0;
+						cDir.y = 0;
+
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+							cDir.y--;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::UP));
+							client->commandStack.push_back(character2.GetPos().x + cDir.x);
+							client->commandStack.push_back(character2.GetPos().y + cDir.y);
+						}
+						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+						{
+							cDir.y++;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::DOWN));
+							client->commandStack.push_back(character2.GetPos().x + cDir.x);
+							client->commandStack.push_back(character2.GetPos().y + cDir.y);
+						}
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+						{
+							cDir.x--;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::LEFT));
+							client->commandStack.push_back(character2.GetPos().x + cDir.x);
+							client->commandStack.push_back(character2.GetPos().y + cDir.y);
+						}
+						else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+						{
+							cDir.x++;
+							auto now = std::chrono::high_resolution_clock::now();
+							auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+							client->commandStack.push_back(currentTime);
+							client->commandStack.push_back((int)UDPClientManager::MoveType(UDPClientManager::MoveType::RIGHT));
+							client->commandStack.push_back(character2.GetPos().x + cDir.x);
+							client->commandStack.push_back(character2.GetPos().y + cDir.y);
+						}
+
+						//client->SendDesiredMove(character.GetPos().x + cDir.x, character.GetPos().y + cDir.y);
+						//client->commandStack.push_back();
+						character2.Move(cDir);
+
+						// Managing Shooting
+						if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+							cDir.x = 1; // Default shoot direction
+							cDir.y = 0; // Default shoot direction
+
+							if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+								cDir.y = -1;
+								cDir.x = 0;
+							}
+							else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+								cDir.y = 1;
+								cDir.x = 0;
+							}
+							if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+								cDir.x = -1;
+							else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+								cDir.x = 1;
+							bullets.push_back(Bullet(character.GetPos(), cDir));
+						}
+						break;
+					}
+				}
+				//////////
+				/////////
+				/////////
+				/////////
 				if (!client->_startPlaying && !client->isChallenge && !client->selectMatchMakingOption) // Input name
 				{
 					// Manage events when no playing

@@ -11,6 +11,22 @@ class UDPServerManager
 {
 
 public:
+    enum class MoveType
+    {
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT,
+        SHOOTLEFT,
+        SHOOTLEFTUP,
+        SHOOTRIGHT,
+        SHOOTRIGHTUP,
+        SHOOTUP,
+        SHOOTLEFTDOWN,
+        SHOOTDOWN,
+        SHOOTRIGHTDOWN
+    };
+
     struct Client // NEW: changed Client structure
     {
         // NEW: removed "socket"
@@ -18,6 +34,7 @@ public:
         unsigned short port; // NEW: added this
         std::string username;
         unsigned int id; // NEW: added this
+        unsigned int matchID; // NEW: added this
         std::chrono::system_clock::time_point ts; // NEW: added this
         std::chrono::system_clock::time_point lastMessageRecievedTs;
         std::chrono::system_clock::time_point lastPingSendedTs;
@@ -31,8 +48,14 @@ public:
         Client(std::string _username, sf::IpAddress _ip, unsigned short _port)
             : username(_username), ip(_ip), port(_port) {}
     };
+    struct MovementCMD 
+    {
+        MoveType moveType;
+        int PosX;
+        int PosY;
+    };
 
-
+    
     struct NewConnection
     {
         sf::IpAddress ip;
@@ -102,7 +125,9 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        PLAYERNUMBER,
         MOVEMENT,
+        RIVALMOVEMENT,
         INITIALPOS,
         PING,
         PONG,
@@ -110,23 +135,7 @@ private:
         ACK,
         DISCONNECT          // Packet to disconnect
     };
-    public:
-        enum class MoveType
-        {
-            UP,
-            DOWN,
-            LEFT,
-            RIGHT,
-            SHOOTLEFT,
-            SHOOTLEFTUP,
-            SHOOTRIGHT,
-            SHOOTRIGHTUP,
-            SHOOTUP,
-            SHOOTLEFTDOWN,
-            SHOOTDOWN,
-            SHOOTRIGHTDOWN
-        };
-
+  
 private:
     // ------ VARIABLES: ------
     sf::UdpSocket _socket;
@@ -137,6 +146,7 @@ private:
     std::map<std::pair<sf::IpAddress, unsigned short>, NewConnection> _newConnections;//clients que s'estan intentant conectar
     int packetCount; //id del paquet
     std::map<int, PacketInfo> packetMap;
+    std::map<int, MovementCMD> movementCmdMap;
     std::vector<int> packetsToDelete;
     int challengeNumber1;
     int challengeNumber2;

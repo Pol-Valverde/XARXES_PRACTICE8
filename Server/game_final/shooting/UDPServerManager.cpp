@@ -101,7 +101,6 @@ void UDPServerManager::Receive()
                 case PacketType::TRYCONNECTION:
                 {
                     packet >> user;
-                    std::cout << "--Username-- " << std::endl << user.toAnsiString() << std::endl;
                     CreateChallenge(remoteIp, remotePort, PacketType::CHALLENGE);
 
                     NewConnection newConnection(remoteIp, remotePort, user.toAnsiString(), challengeNumber1, challengeNumber2, challengeNumber1 + challengeNumber2);
@@ -114,7 +113,6 @@ void UDPServerManager::Receive()
                     int result, id;
                     packet >> result;
                     packet >> id;
-                    std::cout << "Challenge packet id: ------->" << id << std::endl;;
                     std::cout << result << std::endl;
 
                     sf::Packet challengeStatusPacket;
@@ -123,7 +121,6 @@ void UDPServerManager::Receive()
                     if (result == challengeNumber1 + challengeNumber2)//Afegir a la llista de clients!!
                     {
                         NewConnection tempConnection = _newConnections[std::make_pair(remoteIp, remotePort)];
-                        std::cout << "USERNAME" << tempConnection.username << "IP " << tempConnection.ip << "PORT " << tempConnection.port << std::endl;
                         Client tempClient = Client(tempConnection.username, remoteIp, remotePort);
                         tempClient.lastMessageRecievedTs = std::chrono::system_clock::now();
                         tempClient.lastPingSendedTs = std::chrono::system_clock::now();
@@ -145,7 +142,6 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::MATCHMAKINGMODE:
                 {
-                    std::cout << "Matchmaking" << std::endl;
 
                     int result;
                     packet >> result;
@@ -154,11 +150,9 @@ void UDPServerManager::Receive()
                 
                     sf::String username;
                     packet >> username;
-                    std::cout << "Username ----------->" << username.toAnsiString() << std::endl;
                     int id;
                     packet >> id;
                     _clients[clientId].username = username;
-                    std::cout << "ID ----------->" << id << std::endl;
                 
                     SendACKToClient(remoteIp, remotePort, id);
                
@@ -166,8 +160,11 @@ void UDPServerManager::Receive()
                     if (result == 1)
                     {
                         _matches[currentMatchID] = Match(currentMatchID, clientId, -1);
+                        _clients[clientId].matchID = currentMatchID;
                         currentMatchID++;
-
+                        sf::Packet player1Packet;
+                        player1Packet << (int)PacketType::PLAYERNUMBER << 1;
+                        Send(player1Packet, _clients[clientId].ip, _clients[clientId].port);
                         clientsCreatingMatch.push_back(clientId);
                     }
                     else if (result == 2)
@@ -175,8 +172,11 @@ void UDPServerManager::Receive()
                         if (clientsCreatingMatch.size() <= 0)
                         {
                             _matches[currentMatchID] = Match(currentMatchID, clientId, -1);
+                            _clients[clientId].matchID = currentMatchID;
                             currentMatchID++;
-
+                            sf::Packet player1Packet;
+                            player1Packet << (int)PacketType::PLAYERNUMBER << 1;
+                            Send(player1Packet, _clients[clientId].ip, _clients[clientId].port);
                             clientsCreatingMatch.push_back(clientId);
                         }
                         else
@@ -189,7 +189,7 @@ void UDPServerManager::Receive()
 
                             for (auto m : _matches)
                             {
-                                if (m.second.clientID2 != -1)
+                                if (m.second.clientID2 == -1)
                                 {
                                     char _waitingClientFirstLetter = _clients[m.second.clientID2].username[0];
                                     
@@ -205,7 +205,16 @@ void UDPServerManager::Receive()
                             }
 
                             _matches[_matchToJoinId].clientID2 = clientId;
+                            auto it = std::find(clientsCreatingMatch.begin(), clientsCreatingMatch.end(), _matches[_matchToJoinId].clientID1);
+                            if (it != clientsCreatingMatch.end()) {
+                                clientsCreatingMatch.erase(it);
+                            }
+                            
 
+                            _clients[clientId].matchID = _matchToJoinId;
+                            sf::Packet player2Packet;
+                            player2Packet <<(int) PacketType::PLAYERNUMBER<<2;
+                            Send(player2Packet, _clients[clientId].ip, _clients[clientId].port);
                             std::cout << "Player 1 name: " << _clients[_matches[_matchToJoinId].clientID1].username << " ||| " << "Player 2 name: " << _clients[_matches[_matchToJoinId].clientID2].username << std::endl;
                         }
                     }
@@ -237,30 +246,39 @@ void UDPServerManager::Receive()
                 case PacketType::MOVEMENT:
                 {
                   
-
+                    int TS;
                     int move;
-                    int desiredMoveX;
-                    int desiredMoveY;
+                    int MoveX;
+                    int MoveY;
+
+                    
+                    
 
                     while (!packet.endOfPacket())
                     {
+                        packet >> TS;
                         packet >> move;
+                        packet >> MoveX;
+                        packet >> MoveY;
 
-                        switch ((MoveType)move)
+                        movementCmdMap[TS] = MovementCMD{ (UDPServerManager::MoveType)move,MoveX,MoveY };
+                      /* */
+                    }
+
+                    for (auto it = movementCmdMap.begin(); it != movementCmdMap.end(); ++it) {
+                        switch (it->second.moveType)
                         {
                         case MoveType::DOWN:
                         {
-                            packet >> desiredMoveX;
-                            packet >> desiredMoveY;
-                            std::cout << "recieved movement packet" << std::endl;
                             int tempNewPosX = _clients[clientId].posX + 0;
                             int tempNewPosY = _clients[clientId].posY + 1;
 
                             sf::Packet newPlayerPosPacket;
+                            sf::Packet newRivalPosPacket;
 
-                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                            if (!(tempNewPosX == it->second.PosX && tempNewPosY == it->second.PosY)) {
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
-                                std::cout << "nice cock santiago" << std::endl;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
                             }
                             else
                             {
@@ -268,26 +286,34 @@ void UDPServerManager::Receive()
                                 _clients[clientId].posY = tempNewPosY;
 
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
 
                             }
+                            int rivalID;
 
+                            if (_matches[_clients[clientId].matchID].clientID1 == clientId) {
+                                rivalID = _matches[_clients[clientId].matchID].clientID2;
+                            }
+                            else {
+                                rivalID = _matches[_clients[clientId].matchID].clientID1;
+                            }
                             SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+                            SendNonCritical(newRivalPosPacket, _clients[rivalID].ip, _clients[rivalID].port);
 
                             break;
                         }
                         case MoveType::UP:
                         {
-                            packet >> desiredMoveX;
-                            packet >> desiredMoveY;
-                            std::cout << "recieved movement packet" << std::endl;
+
                             int tempNewPosX = _clients[clientId].posX + 0;
                             int tempNewPosY = _clients[clientId].posY - 1;
 
-                            sf::Packet newPlayerPosPacket;
+                          sf::Packet newPlayerPosPacket;
+                            sf::Packet newRivalPosPacket;
 
-                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                            if (!(tempNewPosX == it->second.PosX && tempNewPosY == it->second.PosY)) {
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
-                                std::cout << "nice cock santiago" << std::endl;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
                             }
                             else
                             {
@@ -295,26 +321,36 @@ void UDPServerManager::Receive()
                                 _clients[clientId].posY = tempNewPosY;
 
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
 
                             }
-
+                            int rivalID;
+                            
+                            if (_matches[_clients[clientId].matchID].clientID1 == clientId) {
+                                rivalID = _matches[_clients[clientId].matchID].clientID2;
+                            }
+                            else {
+                                rivalID = _matches[_clients[clientId].matchID].clientID1;
+                            }
                             SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+                            SendNonCritical(newRivalPosPacket, _clients[rivalID].ip, _clients[rivalID].port);
+
+
 
                             break;
                         }
                         case MoveType::RIGHT:
                         {
-                            packet >> desiredMoveX;
-                            packet >> desiredMoveY;
-                            std::cout << "recieved movement packet" << std::endl;
+
                             int tempNewPosX = _clients[clientId].posX + 1;
                             int tempNewPosY = _clients[clientId].posY - 0;
 
                             sf::Packet newPlayerPosPacket;
+                            sf::Packet newRivalPosPacket;
 
-                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                            if (!(tempNewPosX == it->second.PosX && tempNewPosY == it->second.PosY)) {
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
-                                std::cout << "nice cock santiago" << std::endl;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
                             }
                             else
                             {
@@ -322,26 +358,35 @@ void UDPServerManager::Receive()
                                 _clients[clientId].posY = tempNewPosY;
 
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << tempNewPosX << tempNewPosY;
 
                             }
+                            int rivalID;
 
+                            if (_matches[_clients[clientId].matchID].clientID1 == clientId) {
+                                rivalID = _matches[_clients[clientId].matchID].clientID2;
+                            }
+                            else {
+                                rivalID = _matches[_clients[clientId].matchID].clientID1;
+                            }
                             SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+                            SendNonCritical(newRivalPosPacket, _clients[rivalID].ip, _clients[rivalID].port);
+
 
                             break;
                         }
                         case MoveType::LEFT:
                         {
-                            packet >> desiredMoveX;
-                            packet >> desiredMoveY;
-                            std::cout << "recieved movement packet" << std::endl;
+
                             int tempNewPosX = _clients[clientId].posX - 1;
                             int tempNewPosY = _clients[clientId].posY - 0;
 
                             sf::Packet newPlayerPosPacket;
+                            sf::Packet newRivalPosPacket;
 
-                            if (!(tempNewPosX == desiredMoveX && tempNewPosY == desiredMoveY)) {
+                            if (!(tempNewPosX == it->second.PosX && tempNewPosY == it->second.PosY)) {
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
-                                std::cout << "nice cock santiago" << std::endl;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << _clients[clientId].posX << _clients[clientId].posY;
                             }
                             else
                             {
@@ -349,17 +394,26 @@ void UDPServerManager::Receive()
                                 _clients[clientId].posY = tempNewPosY;
 
                                 newPlayerPosPacket << (int)PacketType::MOVEMENT << tempNewPosX << tempNewPosY;
+                                newRivalPosPacket << (int)PacketType::RIVALMOVEMENT << tempNewPosX << tempNewPosY;
 
                             }
-
+                            int rivalID;
+                            
+                            if (_matches[_clients[clientId].matchID].clientID1 == clientId) {
+                                rivalID = _matches[_clients[clientId].matchID].clientID2;
+                            }
+                            else {
+                                rivalID = _matches[_clients[clientId].matchID].clientID1;
+                            }
                             SendNonCritical(newPlayerPosPacket, remoteIp, remotePort);
+                            SendNonCritical(newRivalPosPacket, _clients[rivalID].ip, _clients[rivalID].port);
 
                             break;
                         }
 
                         }
                     }
-
+                    movementCmdMap.clear();
                     break;
                 }
                 case PacketType::INITIALPOS:
@@ -371,7 +425,6 @@ void UDPServerManager::Receive()
 
                     SendACKToClient(remoteIp,remotePort,packetID);
 
-                    std::cout << "Init position test -> X: " << _clients[clientId].posX << " Y: " << _clients[clientId].posY << std::endl;
 
                     break;
                 }

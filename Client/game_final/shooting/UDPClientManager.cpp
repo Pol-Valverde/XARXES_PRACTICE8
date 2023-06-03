@@ -218,6 +218,35 @@ void UDPClientManager::Receive()
 					UpdatePosition = true;
 					break;
 				}
+				case PacketType::RIVALMOVEMENT:
+				{
+
+					packet >> _client.rivalPosX;
+					packet >> _client.rivalPosY;
+					UpdateRivalPosition = true;
+					break;
+				}
+				case PacketType::PLAYERNUMBER:
+				{
+					int playerNum;
+					packet >> playerNum;
+					int packetID;
+					packet >> packetID;
+					SendACKToServer(sf::IpAddress("127.0.0.1"), 5000,packetID);
+
+					if (playerNum == 1) {
+						isPlayerOne = true;
+						_client.rivalPosX = 40;
+						_client.rivalPosY = 40;
+					}
+					else {
+						isPlayerOne = false;
+						_client.posX = 40;
+						_client.posY = 40;
+					}
+					break;
+				}
+
 			}
 		}
 	}

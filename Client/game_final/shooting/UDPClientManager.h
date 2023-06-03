@@ -19,6 +19,8 @@ class UDPClientManager
         int ts; // NEW: added this
         int posX = 10;
         int posY = 10;
+        int rivalPosX = 10;
+        int rivalPosY = 10;
 
         Client(std::string _username) {
             username = _username;
@@ -63,7 +65,9 @@ private:
         CHALLENGEFAILED,    // Captcha failed
         RETRYCHALLENGE,     // Retry challenge
         MATCHMAKINGMODE,
+        PLAYERNUMBER,
         MOVEMENT,
+        RIVALMOVEMENT,
         INITIALPOS,
         PING,
         PONG,
@@ -73,7 +77,9 @@ private:
     };
 
 public:
+    bool isPlayerOne;
     bool UpdatePosition = false;
+    bool UpdateRivalPosition = false;
     enum class MoveType
     {
         UP,     
