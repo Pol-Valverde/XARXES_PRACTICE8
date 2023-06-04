@@ -43,12 +43,10 @@ void Game::run(UDPClientManager* client)
 
 			if (client->UpdatePosition) {
 				if (client->isPlayerOne) {
-					std::cout << "youyouyou" << std::endl;
 					character.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
 					client->UpdatePosition = false;
 				}
 				else {
-					std::cout << "youyouyou" << std::endl;
 					character2.Teleport(sf::Vector2f(client->_client.posX, (client->_client.posY)));
 					client->UpdatePosition = false;
 				}
@@ -56,12 +54,10 @@ void Game::run(UDPClientManager* client)
 			}
 			if (client->UpdateRivalPosition) {
 				if (client->isPlayerOne) {
-					std::cout << "rivalyouyou" << std::endl;
 					character2.Teleport(sf::Vector2f(client->_client.rivalPosX, (client->_client.rivalPosY)));
 					client->UpdateRivalPosition = false;
 				}
 				else {
-					std::cout << "rivalyouyou" << std::endl;
 					character.Teleport(sf::Vector2f(client->_client.rivalPosX, (client->_client.rivalPosY)));
 					client->UpdateRivalPosition = false;
 				}
@@ -95,6 +91,8 @@ void Game::run(UDPClientManager* client)
 						cDir.x = 0;
 						cDir.y = 0;
 
+
+						//here we accumulate the commands in the commandStack to then send it to the server all at once
 						if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
 							cDir.y--;
 							auto now = std::chrono::high_resolution_clock::now();
@@ -161,7 +159,7 @@ void Game::run(UDPClientManager* client)
 						break;
 					}
 				}
-				///////////
+				///////////PLAYER 2 MOVEMENT
 				//////////
 				//////////
 				//////////
@@ -270,9 +268,7 @@ void Game::run(UDPClientManager* client)
 					window.draw(text);
 					if (event.key.code == sf::Keyboard::Return && input.getSize() > 0)
 					{
-						std::cout << input.getSize()<<"   SIZE INPUT";
 						int result = stoi(input.toAnsiString());
-						std::cout << result;
 						client->SendChallenge(result);
 						input = "";
 					}

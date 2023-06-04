@@ -5,6 +5,7 @@
 
 UDPServerManager::Status UDPServerManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+    //as in the client we send critical packets adding them to the packetMap.
     int probabilty = probLossManager.generate_prob();
     std::cout << "probability: " << probabilty << std::endl;
 
@@ -12,6 +13,8 @@ UDPServerManager::Status UDPServerManager::Send(sf::Packet& packet, sf::IpAddres
     PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
     packet << packetCount;
     packetMap[packetCount++] = packetInfo; // packets to ReSend
+
+    //check if the probability is higher than the threshold.
     if (probabilty > packetLossProb)
     {
         status = _socket.send(packet, ip, port);
@@ -110,6 +113,7 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::CHALLENGE:
                 {
+                    //we generate a random mathematical operation and send it to the client as a captcha
                     int result, id;
                     packet >> result;
                     packet >> id;
@@ -142,7 +146,7 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::MATCHMAKINGMODE:
                 {
-
+                    //check the client input to see if they want to create a match or join an existing one
                     int result;
                     packet >> result;
 
@@ -169,6 +173,7 @@ void UDPServerManager::Receive()
                     }
                     else if (result == 2)
                     {
+                        //if there are no matches to join they will be match creators
                         if (clientsCreatingMatch.size() <= 0)
                         {
                             _matches[currentMatchID] = Match(currentMatchID, clientId, -1);
@@ -181,6 +186,8 @@ void UDPServerManager::Receive()
                         }
                         else
                         {
+
+                            //matchmaking done by alphabetic sorting using usernames and the ascii table to check it.
                             char _firstUsernameLetter = username[0];
 
                             int _minimumCharDifference = 255;
@@ -203,7 +210,7 @@ void UDPServerManager::Receive()
                                     }
                                 }
                             }
-
+                            //once we know our rival we join the match.
                             _matches[_matchToJoinId].clientID2 = clientId;
                             auto it = std::find(clientsCreatingMatch.begin(), clientsCreatingMatch.end(), _matches[_matchToJoinId].clientID1);
                             if (it != clientsCreatingMatch.end()) {
@@ -223,16 +230,19 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::PONG:
                 {
+                    //when we recieve the pong we reset the check ping variables to reset it
                     std::cout << "recieved pong" << std::endl;
                     _clients[clientId].lastPingSendedTs = std::chrono::system_clock::now();
                     _clients[clientId].lastMessageRecievedTs = std::chrono::system_clock::now();
-                   // _clients[clientId].pingCounter = 0;
+                    _clients[clientId].pingCounter = 0;
                     _clients[clientId].firstPingSended = false;
 
                     break;
                 }
                 case PacketType::ACK:
                 {
+                    //when we recieve the ack of a critical packet we put it into packets to delete
+                    //in order to delete it when we finish iterating the packets so it does not throw an error
                     int tempID;
                     packet >> tempID;
                     StorePacketRTT(tempID);
@@ -253,7 +263,8 @@ void UDPServerManager::Receive()
 
                     
                     
-
+                    //we read the movement packet and read the type of movement and desired position
+                    //then check if the desired possition is possible if not we do the reconciliation
                     while (!packet.endOfPacket())
                     {
                         packet >> TS;
@@ -418,6 +429,8 @@ void UDPServerManager::Receive()
                 }
                 case PacketType::INITIALPOS:
                 {
+
+                    //we send the initial pos to players.
                     int packetID;
                     packet >> _clients[clientId].posX;
                     packet >> _clients[clientId].posY;
@@ -436,7 +449,7 @@ void UDPServerManager::Receive()
 void UDPServerManager::CreateChallenge(const sf::IpAddress& remoteIp, unsigned short remotePort, PacketType pt)
 {
     sf::Packet challengePacket;
-
+    //here we create the random add operation with a maximum solution of 100
     
     challengePacket << (int)pt;
     challengePacket << clientCurrentId++;
@@ -470,69 +483,50 @@ void UDPServerManager::SendACKToClient(sf::IpAddress remoteIP, unsigned short re
 
 void UDPServerManager::CheckPing()
 {
+    //does not work entirely but general structure is done
+    //some variables don't update correctly inside the loop
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(2));
         if (_clients.size() > 0) {
-
+            
             auto current_time = std::chrono::system_clock::now();
-
-            for (auto client : _clients)
+            for (auto it = _clients.begin();it!=_clients.end();++it)
             {
 
-                if (!client.second.firstPingSended)
-                {
-                    if ((current_time - client.second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
+
+                    if ((current_time - it->second.lastMessageRecievedTs) >= std::chrono::milliseconds(10000))
                     {
-                        if (client.second.pingCounter >= 6) {
+                        if (it->second.pingCounter >= 6) {
                             sf::Packet disconnectionPacket;
                             std::cout << " Disconnected by PING" << std::endl;
                             disconnectionPacket << (int)PacketType::DISCONNECT;
-                            SendNonCritical(disconnectionPacket, client.second.ip, client.second.port);
-                            _clients.erase(client.second.id);
+                            SendNonCritical(disconnectionPacket, it->second.ip, it->second.port);
+                            _clients.erase(it->second.id);
                         }
                         else
                         {
-                            std::cout << " PING " << std::endl;
+                           
                             //sendFirstPing
-                            client.second.firstPingSended = true;
-                            client.second.pingCounter++;
-                            std::cout << client.second.pingCounter << std::endl;
-
-                            client.second.lastPingSendedTs = std::chrono::system_clock::now();
+                            it->second.firstPingSended = true;
+                            it->second.pingCounter++;
+                            std::cout << " PING number: " << it->second.pingCounter << std::endl;
+                            it->second.lastPingSendedTs = std::chrono::system_clock::now();
                             sf::Packet pingPacket;
                             pingPacket << (int)PacketType::PING;
-                            SendNonCritical(pingPacket, client.second.ip, client.second.port);
+                            SendNonCritical(pingPacket, it->second.ip, it->second.port);
                         }
-                    }
-                }
-                else {
-                    if (((current_time - client.second.lastPingSendedTs) >= std::chrono::milliseconds(2000)) && (client.second.pingCounter < 5))
-                    {
-                        client.second.pingCounter++;
-                        sf::Packet pingPacket;
-
-                        std::cout << " PING" << std::endl;
-                        pingPacket << (int)PacketType::PING;
-                        SendNonCritical(pingPacket, client.second.ip, client.second.port);
-                        client.second.lastPingSendedTs = std::chrono::system_clock::now();
-                        //sendFirstPing
-                    }
-                    else if (client.second.pingCounter >= 5) {
-                        sf::Packet disconnectionPacket;
-                        std::cout << " Disconnected by PING" << std::endl;
-                        disconnectionPacket << (int)PacketType::DISCONNECT;
-                        SendNonCritical(disconnectionPacket, client.second.ip, client.second.port);
-                        _clients.erase(client.second.id);
                     }
                 }
             }
         }
     }
-}
+
 
 void UDPServerManager::CheckTimeStamp()
 {
+
+    //we check the critical packets timestamps and if it has been sent half a second ago it is resended.
     while (true)
     {
         if (packetMap.size() > 0) {
@@ -563,7 +557,6 @@ void UDPServerManager::CheckTimeStamp()
 
             packetsToDelete.clear();
 
-            std::cout << "PacketMap size: " << packetsToDelete.size() << std::endl;
         }
     }
 }
@@ -574,13 +567,16 @@ void UDPServerManager::GetLineFromCin()
 
     while (true)
     {
-        sf::Packet disconnectionPacket;
+        
         std::getline(std::cin, line);
         if (line == "exit") {
-            disconnectionPacket << (int)PacketType::DISCONNECT;
+            
             for (std::pair<int, Client> client : _clients) {
+                sf::Packet disconnectionPacket;
+                disconnectionPacket << (int)PacketType::DISCONNECT;
                 Send(disconnectionPacket, client.second.ip, client.second.port);
             }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             _clients.clear();
             exit(0);
         }
@@ -589,6 +585,7 @@ void UDPServerManager::GetLineFromCin()
 
 UDPServerManager::Status UDPServerManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+    //send packet without adding it to the packetmap
     sf::Socket::Status status;
     int probabilty = probLossManager.generate_prob();
     if (probabilty > packetLossProb)
@@ -604,15 +601,16 @@ void UDPServerManager::StorePacketRTT(int _packetId)
     float _rttTime;
     std::chrono::system_clock::time_point _packetFirstTimeSend = packetMap.find(_packetId)->second.firstTimeSent;
     std::chrono::system_clock::time_point _now = std::chrono::system_clock::now();
-    
-    long mssgRTT = (long)std::chrono::duration_cast<std::chrono::milliseconds>(_now - _packetFirstTimeSend).count();
+    auto mssgRTT = std::chrono::duration_cast<std::chrono::nanoseconds>(_now - _packetFirstTimeSend).count();
 
     _packetRTTs.push_back(mssgRTT);
-    std::cout << "mssgRTT" << mssgRTT;
 }
 
 void UDPServerManager::CalculateAverageRTT()
 {
+
+    //if there are less than 10 rtt we make the average with all values
+    //if there are more than 10 we make the average with just the last 10 values.
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -634,7 +632,7 @@ void UDPServerManager::CalculateAverageRTT()
             average /= _packetRTTs.size();
         }
 
-        std::cout << "RTT: " << average << std::endl;
+        std::cout << "RTT average in nanoseconds: " << average << std::endl;
     }
 }
 

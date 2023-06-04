@@ -67,7 +67,9 @@ void Character::Move(sf::Vector2f dir)
 	sprite.setPosition((pos.x+dir.x)*SIZE, (pos.y + dir.y)*SIZE);
 	SetPos(sf::Vector2f((pos.x + dir.x), (pos.y + dir.y)));
 }
+
 void Character::Teleport(sf::Vector2f newPos) {
+	//set the character to the position we want
 	sprite.setPosition((newPos.x) * SIZE, (newPos.y) * SIZE);
 	SetPos(sf::Vector2f((newPos.x ), (newPos.y)));
 }
@@ -90,7 +92,6 @@ bool Character::CheckShoot(Bullet b) {
 	if ((bpos.x >= pos.x && bpos.x <= pos.x + 2) 
 		&& (bpos.y >= pos.y && bpos.y <= pos.y + 2)
 		){
-		std::cout << "shoot " << life << std::endl;
 		life--;
 		if (life <= 0) sprite.setRotation(90);
 		return true;

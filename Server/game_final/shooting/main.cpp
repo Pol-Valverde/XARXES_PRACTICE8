@@ -13,8 +13,8 @@ int main()
     std::thread getLine(&UDPServerManager::GetLineFromCin, serverManager);
     getLine.detach();
 
-    std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
-    checkPing.detach();
+  //  std::thread checkPing(&UDPServerManager::CheckPing, serverManager);
+   // checkPing.detach();
 
     std::thread checkTimeStamp(&UDPServerManager::CheckTimeStamp, serverManager);
     checkTimeStamp.detach();

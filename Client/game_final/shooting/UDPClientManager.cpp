@@ -11,6 +11,7 @@ UDPClientManager::UDPClientManager(unsigned short port, sf::IpAddress ip) :_port
 
 UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+	//we increase the packet id counter and then generate the basic packetInfo
 	packetCount++;
 	sf::Socket::Status status;
 	PacketInfo packetInfo = PacketInfo{ packetCount, packet, std::chrono::system_clock::now(), std::chrono::system_clock::now(), ip, port };
@@ -18,10 +19,11 @@ UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddres
 
 	packetMap[packetCount] = packetInfo;
 	
+
+	//if the probability is higher than the threshold the packet is sended if not it is resended as we previously added it to the packet map.
 	int probabilty = probLossManager.generate_prob();
 	if (probabilty > packetLossProb)
 	{
-		std::cout << "PacketCount : " << packetCount<<std::endl;
 		status = _socket.send(packet, ip, port);
 	}
 	packet.clear();
@@ -30,9 +32,15 @@ UDPClientManager::Status UDPClientManager::Send(sf::Packet& packet, sf::IpAddres
 
 UDPClientManager::Status UDPClientManager::SendNonCritical(sf::Packet& packet, sf::IpAddress ip, unsigned short port)
 {
+	//we send a non critical packet
 	sf::Socket::Status status;
 
-	status = _socket.send(packet, ip, port);
+	//if the probability is higher than the threshold the packet is sended if not is just lost but not resended.
+	int probabilty = probLossManager.generate_prob();
+	if (probabilty > packetLossProb)
+	{
+		status = _socket.send(packet, ip, port);
+	}
 	packet.clear();
 	return Status();
 }
@@ -130,11 +138,12 @@ void UDPClientManager::Receive()
 
 			int type;
 			packet >> type;//sempre rebem primer el type
-			std::cout << type;
 			switch ((PacketType)type)
 			{
 				case PacketType::CHALLENGE:
 				{
+
+					//we recieve the math operation to solve and notify the graphics part to print it
 					if (_setId)
 					{
 						_setId = false;
@@ -163,6 +172,7 @@ void UDPClientManager::Receive()
 
 				case PacketType::CANCONNECT:
 				{
+					//as we succesfully connected to the server we set everithing for the player to select the matchmaking option.
 					int clientId;
 					packet >> clientId;
 					_client = Client(_username, clientId);
@@ -177,7 +187,7 @@ void UDPClientManager::Receive()
 				case PacketType::CANNOTCONNECT:
 				{
 					isChallenge = true;
-
+					//if not we try the challenge again
 
 					packet >> challengeNumber1;
 					packet >> challengeNumber2;
@@ -190,11 +200,13 @@ void UDPClientManager::Receive()
 				}
 				case PacketType::DISCONNECT:
 				{
+					
 					Disconnect();
 					break;
 				}
 				case PacketType::PING:
 				{
+					//if we recieve a ping we send a pong
 					std::cout << "Ping Recived :)" << std::endl;
 					sf::Packet pongPacket;
 					pongPacket << _client.id;
@@ -212,7 +224,7 @@ void UDPClientManager::Receive()
 				}
 				case PacketType::MOVEMENT:
 				{
-					
+					//we recieve the position and we set the update position bool to true
 					packet >> _client.posX;
 					packet >> _client.posY;
 					UpdatePosition = true;
@@ -220,7 +232,7 @@ void UDPClientManager::Receive()
 				}
 				case PacketType::RIVALMOVEMENT:
 				{
-
+					//update the rival position
 					packet >> _client.rivalPosX;
 					packet >> _client.rivalPosY;
 					UpdateRivalPosition = true;
@@ -228,6 +240,7 @@ void UDPClientManager::Receive()
 				}
 				case PacketType::PLAYERNUMBER:
 				{
+					//check if we are player 1 or 2
 					int playerNum;
 					packet >> playerNum;
 					int packetID;
@@ -256,11 +269,12 @@ void UDPClientManager::Disconnect()
 {
 	_socket.unbind();
 	exit(0);
-	std::cout << "disconecting" << std::endl;
 }
 
 void UDPClientManager::CheckTimeStamp()
 {
+
+	//we check the critical packets timestamps and if it has been sent half a second ago it is resended.
 	while (true)
 	{
 		if (packetMap.size() > 0) {
@@ -311,7 +325,6 @@ void UDPClientManager::SendACKToServer(sf::IpAddress remoteIP, unsigned short re
 void UDPClientManager::SendChallenge(int result)
 {
 	sf::Packet tryChallenge;
-	std::cout << result;
 
 	tryChallenge << _client.id;
 	tryChallenge << (int)PacketType::CHALLENGE;
